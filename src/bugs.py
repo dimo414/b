@@ -84,7 +84,7 @@ def _task_from_taskline(taskline):
             task[label.strip()] = data.strip()
     else:
         text = taskline.strip()
-        task = { 'id': _hash(text), 'text': text }
+        task = { 'id': _hash(text), 'text': text, 'owner': '', 'open': 'True' }
     return task
 
 def _tasklines_from_tasks(tasks):
@@ -169,41 +169,93 @@ class BugsDict(object):
                 for task in tasks:
                     self.bugs[task['id']] = task
     
+    def __getitem__(self, prefix):
+        """Return the task with the given prefix.
+        
+        If more than one task matches the prefix an AmbiguousPrefix exception
+        will be raised, unless the prefix is the entire ID of one task.
+        
+        If no tasks match the prefix an UnknownPrefix exception will be raised.
+        
+        """
+        matched = list(filter(lambda tid: tid.startswith(prefix), self.tasks.keys()))
+        if len(matched) == 1:
+            return self.tasks[matched[0]]
+        elif len(matched) == 0:
+            raise UnknownPrefix(prefix)
+        else:
+            matched = list(filter(lambda tid: tid == prefix, self.tasks.keys()))
+            if len(matched) == 1:
+                return self.tasks[matched[0]]
+            else:
+                raise AmbiguousPrefix(prefix)
+    
     def add_bug(self, text):
         """Adds a bug with no owner to the task list"""
-        pass
+        task_id = _hash(text)
+        self.tasks[task_id] = {'id': task_id, 'open': 'True', 'owner': '', 'text': text}
     
-    def rename_bug(self, id, text):
-        """Renames the bug"""
-        pass
+    def rename_bug(self, prefix, text):
+        """Renames the bug
+        
+        If more than one task matches the prefix an AmbiguousPrefix exception
+        will be raised, unless the prefix is the entire ID of one task.
+        
+        If no tasks match the prefix an UnknownPrefix exception will be raised.
+        
+        """
+        task = self[prefix]
+        if text.startswith('s/') or text.startswith('/'):
+            text = re.sub('^s?/', '', text).rstrip('/')
+            find, _, repl = text.partition('/')
+            text = re.sub(find, repl, task['text'])
+        
+        task['text'] = text
     
-    def assign_bug(self, id, user,force=False):
+    def assign_bug(self, prefix, user,force=False):
         """Specifies a new owner of the bug.  Warns if the owner doesn't exist"""
         pass
     
-    def details_bug(self, id):
+    def details_bug(self, prefix):
         """Returns the details of a specified bug if they exist"""
         pass
     
-    def edit_bug(self, id):
+    def edit_bug(self, prefix):
         """Allows the user to edit the details of the specified bug"""
         pass
     
-    def comment_bug(self, id, comment):
+    def comment_bug(self, prefix, comment):
         """Allows the user to add a comment to the bug without launching an editor"""
         pass
     
-    def resolve_bug(self, id):
+    def resolve_bug(self, prefix):
         """Marks a bug as resolved"""
-        pass
+        task = self[prefix]
+        task['open'] = 'False'
     
-    def reopen_bug(self, id):
+    def reopen_bug(self, prefix):
         """Reopens a bug that was previously resolved"""
-        pass
+        task = self[prefix]
+        task['open'] = 'True'
     
-    def list_bugs(self,open=True,owner='',grep='',verbose=False,quiet=False):
+    def list_bugs(self,open=True,owner='*',grep='',verbose=False,quiet=False):
         """Lists all bugs, applying the given filters"""
-        pass
+        tasks = dict(self.bugs.items())
+        label = 'prefix' if not verbose else 'id'
+        
+        if not verbose:
+            # is this faster?  Find out.
+            prefixes = _prefixes(tasks).items()
+            for task_id, prefix in prefixes:
+                tasks[task_id]['prefix'] = prefix
+        
+        plen = max(map(lambda t: len(t[label]), tasks.values())) if tasks else 0
+        for task in tasks.values():
+            if (open and task['open'] == 'True') or (not open and task['open'] != 'True'):
+                if owner == '*' or owner == task['owner']:
+                    if grep.lower() in task['text'].lower():
+                        p = '%s - ' % task[label].ljust(plen) if not quiet else ''
+                        print(p + task['text'])
 #
 # Mercurial Extention Methods
 # These are used to allow the tool to work as a Hg Extention
