@@ -140,7 +140,76 @@ def _prefixes(ids):
     if ':' in pre:
         del pre[':']
     return pre
+
+#
+# Primary Class
+#
+class BugsDict(object):
+    """A set of bugs, issues, and tasks, both finished and unfinished, for a given repository.
     
+    The list's file is read from disk when initialized. The items
+    can be written back out to disk with the write() function.
+    
+    You can specify any taskdir you want, but the intent is to work from the cwd
+    and therefore anything calling this class ought to handle that change
+    (normally to the repo root)
+    """
+    def __init__(self, bugsdir='.bugs'):
+        """Initialize by reading the task files, if they exist."""
+        self.file = 'bugs'
+        self.bugsdir = bugsdir
+        self.bugs = {}
+        path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
+        if os.path.isdir(path):
+            raise InvalidTaskfile
+        if os.path.exists(path):
+            with open(path, 'r') as tfile:
+                tls = [tl.strip() for tl in tfile if tl]
+                tasks = map(_task_from_taskline, tls)
+                for task in tasks:
+                    self.bugs[task['id']] = task
+    
+    def add_bug(self, text):
+        """Adds a bug with no owner to the task list"""
+        pass
+    
+    def rename_bug(self, id, text):
+        """Renames the bug"""
+        pass
+    
+    def assign_bug(self, id, user,force=False):
+        """Specifies a new owner of the bug.  Warns if the owner doesn't exist"""
+        pass
+    
+    def details_bug(self, id):
+        """Returns the details of a specified bug if they exist"""
+        pass
+    
+    def edit_bug(self, id):
+        """Allows the user to edit the details of the specified bug"""
+        pass
+    
+    def comment_bug(self, id, comment):
+        """Allows the user to add a comment to the bug without launching an editor"""
+        pass
+    
+    def resolve_bug(self, id):
+        """Marks a bug as resolved"""
+        pass
+    
+    def reopen_bug(self, id):
+        """Reopens a bug that was previously resolved"""
+        pass
+    
+    def list_bugs(self,open=True,owner='',grep='',verbose=False,quiet=False):
+        """Lists all bugs, applying the given filters"""
+        pass
+#
+# Mercurial Extention Methods
+# These are used to allow the tool to work as a Hg Extention
+#
+
+
 #
 # Mercurial Replacement Methods
 # These are used to allow this tool to work without being a Hg Extension
