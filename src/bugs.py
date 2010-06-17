@@ -1,17 +1,22 @@
 #!/usr/bin/env python
 
 """
-Simple bug tracking system for Mercurial
-Based off and built using Steve Losh's t
-http://stevelosh.com/projects/t/
+HgBugs - A lightweight bug tracker for Mercurial
+
+Version 0.1.0
+
+Based off and built using Steve Losh's brilliantly simple task manager t
+(http://stevelosh.com/projects/t/) the fundamental principle is 
+'Get things done, not organized', and like t, 
+"the only way to make your bug list prettier is to finish some damn tasks."
 """
-version = "Bugs 0.1.0"
 
 #
 # Imports
 #
 import os, errno, re, hashlib, sys
 from datetime import datetime
+from mercurial import hg
 
 #
 # Exceptions
@@ -335,6 +340,14 @@ class BugsDict(object):
         print(_describe_print(printed,open,owner,grep))
 
 #
-# Mercurial Extention Methods
+# Mercurial Extention Operations
 # These are used to allow the tool to work as a Hg Extention
 #
+def add(ui,repo,*attr):
+    print(attr)
+    
+cmdtable = {"bug-add": (add,[],"boom")}
+    # cmd name        function call
+    
+#    "bug-edit": (edit,[],"bleeem"),
+#   "bug-details": (details,[],"blooock")
