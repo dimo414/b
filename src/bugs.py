@@ -4,7 +4,7 @@
 #
 # Imports
 #
-import os, errno, re, hashlib, sys
+import os, errno, re, hashlib, sys, subprocess
 from operator import itemgetter
 from datetime import datetime
 from mercurial.i18n import _
@@ -197,7 +197,7 @@ class BugsDict(object):
         self.bugsdir = bugsdir
         self.detailsdir = 'details'
         self.bugs = {}
-        self.init_details = ("Details for '%s'\nID: %s\nFiled: %s\n\n"
+        self.init_details = ("# Lines starting with '#' and sections without content\n# are not displayed by a call to 'details'\n#\n"
         "[paths]\n# Paths related to this bug.\n# suggested format: REPO_PATH:LINENUMBERS\n\n\n"
         "[details]\n# Additional details\n\n\n"
         "[expected]\n# The expected result\n\n\n"
@@ -247,17 +247,22 @@ class BugsDict(object):
                 return self.bugs[matched[0]]
             else:
                 raise AmbiguousPrefix(prefix)
-            
-    def _make_details_file(self,id):
+    
+    def _get_details_path(self,full_id):
+        """ Returns the directory and file path to the details specified by id """
         dirpath = os.path.join(self.bugsdir,self.detailsdir)
-        path = os.path.join(dirpath,id+".txt")
+        path = os.path.join(dirpath,full_id+".txt")
+        return (dirpath,path)
+    
+    def _make_details_file(self,full_id):
+        (dirpath,path) = self._get_details_path(full_id)
         if not os.path.exists(dirpath):
             _mkdir_p(dirpath)
         if os.path.isdir(path):
-            raise InvalidDetailsFile(id)
+            raise InvalidDetailsFile(full_id)
         if not os.path.exists(path):
             f = open(path, "w+")
-            f.write(self.init_details % (self.bugs[id]['text'],self.bugs[id]['id'],_timestamp()))
+            f.write(self.init_details)
             f.close()
         return path
     
@@ -295,7 +300,9 @@ class BugsDict(object):
         print "UNIMPLEMENTED"
     
     def details(self, prefix):
-        path = os.path.join(self.bugsdir,self.detailsdir,self[prefix]['id']+".txt")
+        """ Provides additional details on the requested bug """
+        self[prefix] # confirms prefix does exist
+        path = self._get_details_path(id)[1]
         if (not os.path.exists(path)):
             raise NoDetails(prefix)
         if os.path.isdir(path):
@@ -320,7 +327,13 @@ class BugsDict(object):
     
     def edit(self, prefix, editor='notepad'):
         """Allows the user to edit the details of the specified bug"""
-        print "UNIMPLEMENTED"
+        task = self[prefix] # confirms prefix does exist
+        path = self._get_details_path(task['id'])[1]
+        if not os.path.exists(path):
+            self._make_details_file(task['id'])
+        subprocess.call([editor, path])
+        #subprocess.call()
+        #print _timestamp()
     
     def comment(self, prefix, comment):
         """Allows the user to add a comment to the bug without launching an editor"""
