@@ -203,7 +203,7 @@ class BugsDict(object):
         "[expected]\n# The expected result\n\n\n"
         "[actual]\n# What happened instead\n\n\n"
         "[reproduce]\n# Reproduction steps\n\n\n"
-        "[comments]\n# Comments and updates - leave your name\n")
+        "[comments]\n# Comments and updates - leave your name")
         path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
         if os.path.isdir(path):
             raise InvalidTaskfile
@@ -301,8 +301,8 @@ class BugsDict(object):
     
     def details(self, prefix):
         """ Provides additional details on the requested bug """
-        self[prefix] # confirms prefix does exist
-        path = self._get_details_path(id)[1]
+        task = self[prefix] # confirms prefix does exist
+        path = self._get_details_path(task['id'])[1]
         if (not os.path.exists(path)):
             raise NoDetails(prefix)
         if os.path.isdir(path):
@@ -337,7 +337,19 @@ class BugsDict(object):
     
     def comment(self, prefix, comment):
         """Allows the user to add a comment to the bug without launching an editor"""
-        print "UNIMPLEMENTED"
+        task = self[prefix] # confirms prefix does exist
+        path = self._get_details_path(task['id'])[1]
+        if not os.path.exists(path):
+            self._make_details_file(task['id'])
+        
+        comment = "On: "+_timestamp()+"\n"+comment
+        # No user managment yet
+        #if user:
+        #    comment = "By: "+user+"\n"+comment
+            
+        f = open(path, "a")
+        f.write("\n\n"+comment)
+        f.close()
     
     def resolve(self, prefix):
         """Marks a bug as resolved"""
