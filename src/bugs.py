@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 
+
+#
+# Imports
+#
+import os, errno, re, hashlib, sys
+from operator import itemgetter
+from datetime import datetime
+from mercurial.i18n import _
+from mercurial import hg
+
 """
 HgBugs - A lightweight bug tracker for Mercurial
 
@@ -12,13 +22,6 @@ Based off and built using Steve Losh's brilliantly simple task manager t
 """
 
 #
-# Imports
-#
-import os, errno, re, hashlib, sys
-from datetime import datetime
-from mercurial import hg
-
-#
 # Exceptions
 #
 class NotInRepo(Exception):
@@ -28,13 +31,13 @@ class NotInRepo(Exception):
 class NoDetails(Exception):
     def __init__(self,prefix):
         """Raised when user requests details on a bug with no details"""
-        super().__init__()
+        super(NoDetails, self).__init__()
         self.prefix = prefix
 
 class InvalidDetailsFile(Exception):
     def __init__(self,prefix):
         """Raised when a bug's details file is invalid (is a dir)"""
-        super().__init__()
+        super(InvalidDetailsFile, self).__init__()
         self.prefix = prefix
 
 class InvalidTaskfile(Exception):
@@ -44,14 +47,14 @@ class InvalidTaskfile(Exception):
 class AmbiguousPrefix(Exception):
     """Raised when trying to use a prefix that could identify multiple tasks."""
     def __init__(self, prefix):
-        super().__init__()
+        super(AmbiguousPrefix, self).__init__()
         self.prefix = prefix
     
 
 class UnknownPrefix(Exception):
     """Raised when trying to use a prefix that does not match any tasks."""
     def __init__(self, prefix):
-        super().__init__()
+        super(UnknownPrefix, self).__init__()
         self.prefix = prefix
 
 #       
@@ -75,10 +78,13 @@ def _mkdir_p(path):
     """
     try:
         os.makedirs(path)
-    except OSError as exc:
+    except OSError, exc:
         if exc.errno == errno.EEXIST:
             pass
         else: raise
+
+def _truth(str,bool):
+    return bool and (str == 'True') or not bool and (str != 'True')
 
 def _task_from_taskline(taskline):
     """Parse a taskline (from a task file) and return a task.
@@ -166,7 +172,7 @@ def _describe_print(num,type,owner,filter):
     typeName = 'open' if type else 'resolved'
     out = "Found %s %s bug%s" % (num, typeName, '' if num==1 else 's')
     if owner != '*':
-        out = out+(" owned by %s" % 'Nobody' if owner=='' else owner)
+        out = out+(" owned by %s" % ('Nobody' if owner=='' else owner))
     if filter != '':
         out = out+" whose title contains %s" % filter
     return out
@@ -202,11 +208,24 @@ class BugsDict(object):
         if os.path.isdir(path):
             raise InvalidTaskfile
         if os.path.exists(path):
-            with open(path, 'r') as tfile:
-                tls = [tl.strip() for tl in tfile if tl]
-                tasks = map(_task_from_taskline, tls)
-                for task in tasks:
-                    self.bugs[task['id']] = task
+            tfile = open(path, 'r')
+            tlns = tfile.readlines()
+            tls = [tl.strip() for tl in tlns if tl]
+            tasks = map(_task_from_taskline, tls)
+            for task in tasks:
+                self.bugs[task['id']] = task
+            tfile.close()
+    
+    def write(self):
+        """Flush the finished and unfinished tasks to the files on disk."""
+        path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
+        if os.path.isdir(path):
+            raise InvalidTaskfile
+        tasks = sorted(self.bugs.values(), key=itemgetter('id'))
+        tfile = open(path, 'w')
+        for taskline in _tasklines_from_tasks(tasks):
+            tfile.write(taskline)
+        tfile.close()
     
     def __getitem__(self, prefix):
         """Return the task with the given prefix.
@@ -217,13 +236,13 @@ class BugsDict(object):
         If no tasks match the prefix an UnknownPrefix exception will be raised.
         
         """
-        matched = list(filter(lambda tid: tid.startswith(prefix), self.bugs.keys()))
+        matched = [item for item in self.bugs.keys() if item.startswith(prefix)]
         if len(matched) == 1:
             return self.bugs[matched[0]]
         elif len(matched) == 0:
             raise UnknownPrefix(prefix)
         else:
-            matched = list(filter(lambda tid: tid == prefix, self.bugs.keys()))
+            matched = [item for item in self.bugs.keys() if item == prefix]
             if len(matched) == 1:
                 return self.bugs[matched[0]]
             else:
@@ -273,7 +292,7 @@ class BugsDict(object):
     
     def assign(self, prefix, user,force=False):
         """Specifies a new owner of the bug.  Warns if the owner doesn't exist"""
-        pass
+        print "UNIMPLEMENTED"
     
     def details(self, prefix):
         path = os.path.join(self.bugsdir,self.detailsdir,self[prefix]['id']+".txt")
@@ -301,11 +320,11 @@ class BugsDict(object):
     
     def edit(self, prefix, editor='notepad'):
         """Allows the user to edit the details of the specified bug"""
-        pass
+        print "UNIMPLEMENTED"
     
     def comment(self, prefix, comment):
         """Allows the user to add a comment to the bug without launching an editor"""
-        pass
+        print "UNIMPLEMENTED"
     
     def resolve(self, prefix):
         """Marks a bug as resolved"""
@@ -317,37 +336,80 @@ class BugsDict(object):
         task = self[prefix]
         task['open'] = 'True'
     
-    def list(self,open=True,owner='*',grep='',verbose=False,quiet=False):
+    def list(self,open=True,owner='*',grep=''):
         """Lists all bugs, applying the given filters"""
         tasks = dict(self.bugs.items())
-        label = 'prefix' if not verbose else 'id'
         
-        if not verbose:
-            # is this faster?  Find out.
-            prefixes = _prefixes(tasks).items()
-            for task_id, prefix in prefixes:
-                tasks[task_id]['prefix'] = prefix
+        prefixes = _prefixes(tasks).items()
+        for task_id, prefix in prefixes:
+            tasks[task_id]['prefix'] = prefix
         
-        plen = max(map(lambda t: len(t[label]), tasks.values())) if tasks else 0
-        printed = 0
-        for task in tasks.values():
-            if (open and task['open'] == 'True') or (not open and task['open'] != 'True'):
-                if owner == '*' or owner == task['owner']:
-                    if grep.lower() in task['text'].lower():
-                        printed += 1
-                        p = '%s - ' % task[label].ljust(plen) if not quiet else ''
-                        print(p + task['text'])
-        print(_describe_print(printed,open,owner,grep))
+        small = [task for task in tasks.values() if _truth(task['open'],open) and (owner == '*' or owner == task['owner']) and grep.lower() in task['text'].lower()]
+        if len(small) > 0:
+            prefs = [len(task['prefix']) for task in small]
+            plen = max(prefs)
+        else:
+            plen = 0
+        for task in small:
+            print '%s - %s' % (task['prefix'].ljust(plen),task['text'])
+        print(_describe_print(len(small),open,owner,grep))
 
 #
 # Mercurial Extention Operations
 # These are used to allow the tool to work as a Hg Extention
 #
-def add(ui,repo,*attr):
-    print(attr)
+# cmd name        function call
+#
+def _findrepo(p):
+    while not os.path.isdir(os.path.join(p, ".hg")):
+        oldp, p = p, os.path.dirname(p)
+        if p == oldp:
+            return None
+    return p
+
+def cmd(ui,repo,cmd = '',*args,**opts):
+    text = (' '.join(args)).strip();
+    #print "cmd: %s" % cmd
+    #print "opts: %s" % opts
+    #print "args: %s\n" % text
+    try:
+        auto_detail = ui.configbool("bugs","auto-detail",True)
+        bugsdir = ui.config("bugs","dir",".bugs")
+        path = _findrepo(os.getcwd())
+        if not path:
+            raise NotInRepo
+        os.chdir(path)
+        bd = BugsDict(auto_detail,bugsdir)
+        if cmd == 'add':
+            bd.add(text)
+            bd.write()
+        elif cmd == 'rename':
+            bd.rename(opts['id'], text)
+            bd.write()
+        elif cmd == 'assign':
+            bd.assign(opts['id'], text, opts['force'])
+            bd.write()
+        elif cmd == 'details':
+            bd.details(opts['id'])
+        elif cmd == 'edit':
+            bd.edit(opts['id'], ui.geteditor())
+        elif cmd == 'comment':
+            bd.comment(opts['id'], text)
+        elif cmd == 'resolve':
+            bd.resolve(opts['id'])
+            bd.write()
+        elif cmd == 'reopen':
+            bd.reopen(opts['id'])
+            bd.write()
+        elif cmd == 'list':
+            bd.list(not opts['resolved'], opts['owner'], opts['grep'])
     
-cmdtable = {"bug-add": (add,[],"boom")}
-    # cmd name        function call
-    
-#    "bug-edit": (edit,[],"bleeem"),
-#   "bug-details": (details,[],"blooock")
+    except Exception, e:
+        sys.stderr.write('An Error Was Raised: %s\n%s\n%s\n%s\n%s' % (e.__class__,e.args,e.message,e.__dict__,e.__doc__))
+
+    #open=True,owner='*',grep='',verbose=False,quiet=False):
+cmdtable = {"bug": (cmd,[('i', 'id', '', 'Pass ID'),
+                         ('f', 'force', False, 'Force username'),
+                         ('r', 'resolved', False, 'List resolved bugs'),
+                         ('o', 'owner', '*', 'Specify an owner'),
+                         ('g', 'grep', '', 'Filter titles by')],"cmd")}
