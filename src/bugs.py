@@ -24,10 +24,6 @@ Based off and built using Steve Losh's brilliantly simple task manager t
 #
 # Exceptions
 #
-class NotInRepo(Exception):
-    """Raised when the cwd is not inside a Mercurial repo."""
-    pass
-
 class NoDetails(Exception):
     def __init__(self,prefix):
         """Raised when user requests details on a bug with no details"""
@@ -57,19 +53,19 @@ class UnknownPrefix(Exception):
         self.prefix = prefix
 
 class AmbiguousUser(Exception):
-    """Raised when trying to use a prefix that could identify multiple tasks."""
+    """Raised when trying to use a user prefix that could identify multiple users."""
     def __init__(self, prefix):
         super(AmbiguousUser, self).__init__()
         self.prefix = prefix
 
 class UnknownUser(Exception):
-    """Raised when trying to use a prefix that does not match any tasks."""
+    """Raised when trying to use a user prefix that does not match any users."""
     def __init__(self, prefix):
         super(UnknownUser, self).__init__()
         self.prefix = prefix
 
 class UnknownCommand(Exception):
-    """Raised when trying to use a prefix that does not match any tasks."""
+    """Raised when trying to run an unknown command."""
     def __init__(self, cmd):
         super(UnknownCommand, self).__init__()
         self.cmd = cmd
@@ -78,6 +74,7 @@ class UnknownCommand(Exception):
 # Helper Methods - often straight from t
 #
 def _datetime(t = ''):
+    """ Returns a formatted string of the time from a timestamp, or now if t is not set. """
     if t == '':
         t = datetime.now()
     else:
@@ -93,7 +90,7 @@ def _hash(text):
     return hashlib.sha1(text.encode('utf-8')).hexdigest()
 
 def _mkdir_p(path):
-    """ race condition handling recursive mkdir call
+    """ race condition handling recursive mkdir -p call
     http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     """
     try:
@@ -103,8 +100,9 @@ def _mkdir_p(path):
             pass
         else: raise
 
-def _truth(str,bool):
-    return bool and (str == 'True') or not bool and (str != 'True')
+def _truth(str):
+    """ Indicates the truth of a string """ 
+    return str == 'True'
 
 def _task_from_taskline(taskline):
     """Parse a taskline (from a task file) and return a task.
@@ -189,6 +187,7 @@ def _prefixes(ids):
     return pre
 
 def _describe_print(num,type,owner,filter):
+    """ Helper function used by list to describe the data just displayed """
     typeName = 'open' if type else 'resolved'
     out = "Found %s %s bug%s" % (num, typeName, '' if num==1 else 's')
     if owner != '*':
@@ -210,9 +209,8 @@ class BugsDict(object):
     and therefore anything calling this class ought to handle that change
     (normally to the repo root)
     """
-    def __init__(self, autodetails=True,bugsdir='.bugs',user=''):
+    def __init__(self,bugsdir='.bugs',user=''):
         """Initialize by reading the task files, if they exist."""
-        self.autodetail = autodetails
         self.bugsdir = bugsdir
         self.user = user
         self.file = 'bugs'
@@ -276,6 +274,7 @@ class BugsDict(object):
         return (dirpath,path)
     
     def _make_details_file(self,full_id):
+        """ Create a details file for the given id """
         (dirpath,path) = self._get_details_path(full_id)
         if not os.path.exists(dirpath):
             _mkdir_p(dirpath)
@@ -289,8 +288,8 @@ class BugsDict(object):
     
     def _users_list(self):
         """ Returns a mapping of usernames to the number of open bugs assigned to that user """
-        open = [item['owner'] for item in self.bugs.values() if _truth(item['open'],True)]
-        closed = [item['owner'] for item in self.bugs.values() if _truth(item['open'],False)]
+        open = [item['owner'] for item in self.bugs.values() if _truth(item['open'])]
+        closed = [item['owner'] for item in self.bugs.values() if not _truth(item['open'])]
         users = {}
         for user in open:
             if user in users:
@@ -314,9 +313,7 @@ class BugsDict(object):
     def add(self, text):
         """Adds a bug with no owner to the task list"""
         task_id = _hash(text)
-        self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': '', 'text': text, 'time': time.time()}
-        if self.autodetail:
-            self._make_details_file(task_id)
+        self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': self.user, 'text': text, 'time': time.time()}
     
     def rename(self, prefix, text):
         """Renames the bug
@@ -336,6 +333,7 @@ class BugsDict(object):
         task['text'] = text
     
     def users(self):
+        """ Prints a list of users along with the number of open bugs they have """
         users = self._users_list()
         if len(users) > 0:
             ulen = max([len(user) for user in users.keys()])+1
@@ -346,7 +344,20 @@ class BugsDict(object):
             print "%s: %s" % (user,str(count).rjust(ulen-len(user)))
     
     def _get_user(self,user,force=False):
-        if user == 'me' and self.user != '':
+        """ Given a user prefix, returns the appropriate username, or fails if
+        the correct user cannot be identified.
+        
+        'me' is a special username which maps to the username specified when
+        constructing the BugsDict.
+        'Nobody' (and prefixes of 'Nobody') is a special username which maps
+        internally to the empty string, indicating no assignment.
+        If force is true, the user 'Nobody' is used.  This is unadvisable,
+        avoid forcing the username 'Nobody'.
+        
+        If force is true, it assumes user is not a prefix and should be
+        assumed to exist already.
+        """
+        if user == 'me':
             return self.user
         users = self._users_list().keys()
         if not force:
@@ -356,7 +367,7 @@ class BugsDict(object):
                 if len(matched) > 1:
                     raise AmbiguousUser(matched)
                 if len(matched) == 0:
-                    raise UnknownUser(matched)
+                    raise UnknownUser(user)
                 user = matched[0]
             if user == 'Nobody':
                 user = ''
@@ -372,7 +383,15 @@ class BugsDict(object):
         print "Assigned %s: %s to %s" % (prefix, task['text'], user)
     
     def details(self, prefix):
-        """ Provides additional details on the requested bug """
+        """ Provides additional details on the requested bug.
+        
+        Metadata (like owner, and creation time) which are
+        not stored in the details file are displayed along with
+        the details.
+        
+        Sections (denoted by a [text] line) with no content
+        are not displayed.
+        """
         task = self[prefix] # confirms prefix does exist
         path = self._get_details_path(task['id'])[1]
         if (not os.path.exists(path)):
@@ -414,16 +433,18 @@ class BugsDict(object):
         #print _timestamp()
     
     def comment(self, prefix, comment):
-        """Allows the user to add a comment to the bug without launching an editor"""
+        """Allows the user to add a comment to the bug without launching an editor.
+        
+        If they have a username set, the comment will show who made it."""
         task = self[prefix] # confirms prefix does exist
         path = self._get_details_path(task['id'])[1]
         if not os.path.exists(path):
             self._make_details_file(task['id'])
         
         comment = "On: "+_datetime()+"\n"+comment
-        # No user managment yet
-        #if user:
-        #    comment = "By: "+user+"\n"+comment
+        
+        if self.user != '':
+            comment = "By: "+self.user+"\n"+comment
             
         f = open(path, "a")
         f.write("\n\n"+comment)
@@ -450,7 +471,7 @@ class BugsDict(object):
         if owner != '*':
             owner = self._get_user(owner)
         
-        small = [task for task in tasks.values() if _truth(task['open'],open) and (owner == '*' or owner == task['owner']) and grep.lower() in task['text'].lower()]
+        small = [task for task in tasks.values() if _truth(task['open']) == open and (owner == '*' or owner == task['owner']) and grep.lower() in task['text'].lower()]
         if len(small) > 0:
             prefs = [len(task['prefix']) for task in small]
             plen = max(prefs)
@@ -466,63 +487,123 @@ class BugsDict(object):
 #
 # cmd name        function call
 #
-def _findrepo(p):
-    while not os.path.isdir(os.path.join(p, ".hg")):
-        oldp, p = p, os.path.dirname(p)
-        if p == oldp:
-            return None
-    return p
-
 def cmd(ui,repo,cmd = '',*args,**opts):
+    """
+    Mercurial-Based Distributed Bug Tracker
+    
+    List of Commands::
+    
+    add text
+        Adds a new open bug to the database, if user is set in the config files, assigns it to user
+        
+    rename prefix text
+        Renames The bug denoted by prefix to text.   You can use sed-style substitution strings if so desired.
+        
+    users
+        Displays a list of all users, and the nuber of open bugs assigned to each of them
+        
+    assign prefix username [-f]
+        Assigns bug denoted by prefix to username.  Username can be a lowercase prefix of
+        another username and it will be mapped to that username.  To avoid this functionality
+        and assign the bug to the exact username specified, or if the user does not already
+        exist in the bugs system, use the -f flag to force the name.
+        
+        Use 'me' to assign
+        the bug to the current user, and 'Nobody' to remove its assignment.
+        
+    details prefix
+        Prints the extended details of the specified bug
+        
+    edit prefix
+        Launches your specified editor to provide additional details 
+        
+    comment prefix comment
+        Appends comment to the details of the bug, along with the date
+        and, if specified, your username without needing to launch an editor
+        
+    resolve prefix
+        Marks the specified bug as resolved
+        
+    reopen prefix
+        Marks the specified bug as open
+        
+    list [-r] [-o owner] [-g search]
+        Lists all bugs, with the following filters:
+        
+            -r list resolved bugs.
+        
+            -o list bugs assigned to owner.  '*' will list all bugs, 'me' will list all bugs assigned to the current user.
+        
+            -g filter by the search string appearing in the title
+        
+    id prefix
+        Takes a prefix and returns the full id of that bug
+    
+    
+    """
     text = (' '.join(args)).strip();
-    #print "cmd: %s" % cmd
-    #print "opts: %s" % opts
-    #print "args: %s\n" % text
+    if len(args) > 0:
+        id = args[0]
+    if len(args) > 1:
+        subtext = (' '.join(args[:1])).strip();
     try:
-        auto_detail = ui.configbool("bugs","auto-detail",True)
         bugsdir = ui.config("bugs","dir",".bugs")
-        owner = ui.config("bugs","owners","Michael")
-        path = _findrepo(os.getcwd())
-        if not path:
-            raise NotInRepo
+        user = ui.config("bugs","user",'')
+        if user == 'hg.user':
+            user = ui.username()
+        path = repo.root
         os.chdir(path)
-        bd = BugsDict(auto_detail,bugsdir,owner)
-        if cmd == 'id':
-            print bd.id(opts['id'])
-        elif cmd == 'add':
+        bd = BugsDict(bugsdir,user)
+        if cmd == 'add':
             bd.add(text)
             bd.write()
         elif cmd == 'rename':
-            bd.rename(opts['id'], text)
+            bd.rename(id, subtext)
             bd.write()
         elif cmd == 'users':
             bd.users()
         elif cmd == 'assign':
-            bd.assign(opts['id'], text, opts['force'])
+            bd.assign(id, subtext, opts['force'])
             bd.write()
         elif cmd == 'details':
-            bd.details(opts['id'])
+            bd.details(id)
         elif cmd == 'edit':
-            bd.edit(opts['id'], ui.geteditor())
+            bd.edit(id, ui.geteditor())
         elif cmd == 'comment':
-            bd.comment(opts['id'], text)
+            bd.comment(id, subtext)
         elif cmd == 'resolve':
-            bd.resolve(opts['id'])
+            bd.resolve(id)
             bd.write()
         elif cmd == 'reopen':
-            bd.reopen(opts['id'])
+            bd.reopen(id)
             bd.write()
         elif cmd == 'list':
             bd.list(not opts['resolved'], opts['owner'], opts['grep'])
+        elif cmd == 'id':
+            print bd.id(id)
         else:
             raise UnknownCommand(cmd)
     
-    except Exception, e:
-        sys.stderr.write('An Error Was Raised: %s\n%s\n%s\n%s\n%s' % (e.__class__,e.args,e.message,e.__dict__,e.__doc__))
+    except NoDetails, e:
+        pass
+    except InvalidDetailsFile, e:
+        pass
+    except InvalidTaskfile, e:
+        pass
+    except AmbiguousPrefix, e:
+        pass
+    except UnknownPrefix, e:
+        pass
+    except AmbiguousUser, e:
+        pass
+    except UnknownUser, e:
+        pass
+    except UnknownCommand, e:
+        pass
+        
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
-cmdtable = {"b|bug": (cmd,[('i', 'id', '', 'Pass ID'),
-                         ('f', 'force', False, 'Force username'),
-                         ('r', 'resolved', False, 'List resolved bugs'),
-                         ('o', 'owner', '*', 'Specify an owner'),
-                         ('g', 'grep', '', 'Filter titles by')],"cmd")}
+cmdtable = {"bug|b": (cmd,[('f', 'force', False, 'Force this exact username'),
+                           ('r', 'resolved', False, 'List resolved bugs'),
+                           ('o', 'owner', '*', 'Specify an owner to list by'),
+                           ('g', 'grep', '', 'Filter titles by STRING')],'cmd [args]')}
