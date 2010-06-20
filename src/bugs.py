@@ -13,7 +13,7 @@ from mercurial import hg
 """
 HgBugs - A lightweight bug tracker for Mercurial
 
-Version 0.1.0
+Version 0.2.0
 
 Based off and built using Steve Losh's brilliantly simple task manager t
 (http://stevelosh.com/projects/t/) the fundamental principle is 
@@ -54,6 +54,18 @@ class UnknownPrefix(Exception):
     """Raised when trying to use a prefix that does not match any tasks."""
     def __init__(self, prefix):
         super(UnknownPrefix, self).__init__()
+        self.prefix = prefix
+
+class AmbiguousUser(Exception):
+    """Raised when trying to use a prefix that could identify multiple tasks."""
+    def __init__(self, prefix):
+        super(AmbiguousUser, self).__init__()
+        self.prefix = prefix
+
+class UnknownUser(Exception):
+    """Raised when trying to use a prefix that does not match any tasks."""
+    def __init__(self, prefix):
+        super(UnknownUser, self).__init__()
         self.prefix = prefix
 
 class UnknownCommand(Exception):
@@ -329,15 +341,35 @@ class BugsDict(object):
             ulen = max([len(user) for user in users.keys()])+1
         else:
             ulen = 0
+        print "Username: Open Bugs\n"
         for (user,count) in users.items():
-            print "Username: Open Bugs\n%s: %s" % (user,str(count).rjust(ulen-len(user)))
+            print "%s: %s" % (user,str(count).rjust(ulen-len(user)))
     
+    def _get_user(self,user,force=False):
+        if user == 'me' and self.user != '':
+            return self.user
+        users = self._users_list().keys()
+        if not force:
+            if not user in users:
+                usr = user.lower()
+                matched = [user for user in users if user.lower().startswith(usr)]
+                if len(matched) > 1:
+                    raise AmbiguousUser(matched)
+                if len(matched) == 0:
+                    raise UnknownUser(matched)
+                user = matched[0]
+            if user == 'Nobody':
+                user = ''
+        return user
+                
     def assign(self, prefix, user,force=False):
         """Specifies a new owner of the bug.  Tries to guess the correct user, or warns if it cannot find an appropriate user.
         
         Using the -f flag will create a new user with that exact name, it will not try to guess, or warn the user."""
         task = self[prefix]
-        users = self._users_list().keys()
+        user = self._get_user(user,force)
+        task['owner'] = user
+        print "Assigned %s: %s to %s" % (prefix, task['text'], user)
     
     def details(self, prefix):
         """ Provides additional details on the requested bug """
@@ -414,6 +446,9 @@ class BugsDict(object):
         prefixes = _prefixes(tasks).items()
         for task_id, prefix in prefixes:
             tasks[task_id]['prefix'] = prefix
+        
+        if owner != '*':
+            owner = self._get_user(owner)
         
         small = [task for task in tasks.values() if _truth(task['open'],open) and (owner == '*' or owner == task['owner']) and grep.lower() in task['text'].lower()]
         if len(small) > 0:
