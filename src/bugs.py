@@ -453,10 +453,10 @@ class BugsDict(object):
         
         text = re.sub("\[\w+\]\s*$", "", text)
         
-        header = "Title: %s\n" % task['text']
+        header = "Title: %s\nID: %s\n" % (task['text'],task['id'])
         if task['owner'] != '':
             header = header + ("Owned By: %s\n" % task['owner'])
-        header = header + ("Filed On: %s\n" % _datetime(task['time']))
+        header = header + ("Filed On: %s\n\n" % _datetime(task['time']))
         text = header + text
         
         return text.strip()
@@ -596,7 +596,8 @@ def cmd(ui,repo,cmd = '',*args,**opts):
     if len(args) > 0:
         id = args[0]
     if len(args) > 1:
-        subtext = (' '.join(args[:1])).strip();
+        subtext = (' '.join(args[1:])).strip();
+    
     try:
         bugsdir = ui.config("bugs","dir",".bugs")
         user = ui.config("bugs","user",'')
