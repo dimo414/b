@@ -2,4 +2,4 @@ glob:.project
 glob:.pydevproject
 glob:*.pyo
 glob:*.pyc
-glob:.bugs/*
+glob:test/*

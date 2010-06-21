@@ -7,17 +7,7 @@
 # http://www.gnu.org/licenses/licenses.html
 # http://www.gnu.org/licenses/gpl.html
 
-#
-# Imports
-#
-import os, errno, re, hashlib, sys, subprocess, time
-from operator import itemgetter
-from datetime import datetime
-from mercurial.i18n import _
-from mercurial import hg
-
-"""
-HgBugs - A lightweight distributed bug tracker for Mercurial
+""" A lightweight distributed bug tracker for Mercurial
 
 Version 0.5.0 - Beta
 
@@ -57,6 +47,15 @@ in the details, but there is no such built in functionality.
 If you find many of those extra features to be unhelpful bloat when you're trying
 to keep track of your smaller projects, however, HgBugs is the tool to use!
 """
+
+#
+# Imports
+#
+import os, errno, re, hashlib, sys, subprocess, time
+from operator import itemgetter
+from datetime import datetime
+from mercurial.i18n import _
+from mercurial import hg
 
 #
 # Exceptions
@@ -227,11 +226,11 @@ def _prefixes(ids):
 def _describe_print(num,type,owner,filter):
     """ Helper function used by list to describe the data just displayed """
     typeName = 'open' if type else 'resolved'
-    out = "Found %s %s bug%s" % (num, typeName, '' if num==1 else 's')
+    out = _("Found %s %s bug%s") % (num, typeName, '' if num==1 else 's')
     if owner != '*':
-        out = out+(" owned by %s" % ('Nobody' if owner=='' else owner))
+        out = out+(_(" owned by %s") % ('Nobody' if owner=='' else owner))
     if filter != '':
-        out = out+" whose title contains %s" % filter
+        out = out+_(" whose title contains %s") % filter
     return out
 
 #
@@ -378,9 +377,10 @@ class BugsDict(object):
             ulen = max([len(user) for user in users.keys()])+1
         else:
             ulen = 0
-        print "Username: Open Bugs\n"
+        out = _("Username: Open Bugs\n")
         for (user,count) in users.items():
-            print "%s: %s" % (user,str(count).rjust(ulen-len(user)))
+            out += _("%s: %s\n") % (user,str(count).rjust(ulen-len(user)))
+        return out
     
     def _get_user(self,user,force=False):
         """ Given a user prefix, returns the appropriate username, or fails if
@@ -419,7 +419,7 @@ class BugsDict(object):
         task = self[prefix]
         user = self._get_user(user,force)
         task['owner'] = user
-        print "Assigned %s: %s to %s" % (prefix, task['text'], user)
+        return _("Assigned %s: %s to %s" % (prefix, task['text'], user))
     
     def details(self, prefix):
         """ Provides additional details on the requested bug.
@@ -459,7 +459,7 @@ class BugsDict(object):
         header = header + ("Filed On: %s\n" % _datetime(task['time']))
         text = header + text
         
-        print(text.strip())
+        return text.strip()
     
     def edit(self, prefix, editor='notepad'):
         """Allows the user to edit the details of the specified bug"""
@@ -480,10 +480,10 @@ class BugsDict(object):
         if not os.path.exists(path):
             self._make_details_file(task['id'])
         
-        comment = "On: "+_datetime()+"\n"+comment
+        comment = _("On: %s\n%s") % (_datetime(),comment)
         
         if self.user != '':
-            comment = "By: "+self.user+"\n"+comment
+            comment = _("By: %s\n%s") % (self.user,comment)
             
         f = open(path, "a")
         f.write("\n\n"+comment)
@@ -516,10 +516,10 @@ class BugsDict(object):
             plen = max(prefs)
         else:
             plen = 0
+        out = ''
         for task in small:
-            print '%s - %s' % (task['prefix'].ljust(plen),task['text'])
-        print(_describe_print(len(small),open,owner,grep))
-
+            out += _('%s - %s\n') % (task['prefix'].ljust(plen),task['text'])
+        return out + _describe_print(len(small),open,owner,grep)
 #
 # Mercurial Extention Operations
 # These are used to allow the tool to work as a Hg Extention
@@ -527,8 +527,7 @@ class BugsDict(object):
 # cmd name        function call
 #
 def cmd(ui,repo,cmd = '',*args,**opts):
-    """
-    Mercurial-Based Distributed Bug Tracker
+    """ Distributed Bug Tracker For Mercurial
     
     List of Commands::
     
@@ -613,12 +612,12 @@ def cmd(ui,repo,cmd = '',*args,**opts):
             bd.rename(id, subtext)
             bd.write()
         elif cmd == 'users':
-            bd.users()
+            ui.write(bd.users())
         elif cmd == 'assign':
             bd.assign(id, subtext, opts['force'])
             bd.write()
         elif cmd == 'details':
-            bd.details(id)
+            ui.write(bd.details(id))
         elif cmd == 'edit':
             bd.edit(id, ui.geteditor())
         elif cmd == 'comment':
@@ -630,31 +629,31 @@ def cmd(ui,repo,cmd = '',*args,**opts):
             bd.reopen(id)
             bd.write()
         elif cmd == 'list':
-            bd.list(not opts['resolved'], opts['owner'], opts['grep'])
+            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep']))
         elif cmd == 'id':
-            print bd.id(id)
+            ui.write(bd.id(id))
         else:
             raise UnknownCommand(cmd)
     
     except NoDetails, e:
-        ui.warn("%s has no associated details file.  Use the edit command to create and populate one." % e.prefix)
+        ui.warn(_("%s has no associated details file.  Use the edit command to create and populate one.") % e.prefix)
     except InvalidDetailsFile, e:
-        ui.warn("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?")
+        ui.warn(_("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?"))
     except InvalidTaskfile, e:
-        ui.warn("The path where the bugs database should be is blocked and cannot be created.  This could be caused by a manually created directory.")
+        ui.warn(_("The path where the bugs database should be is blocked and cannot be created.  This could be caused by a manually created directory."))
     except AmbiguousPrefix, e:
-        ui.warn("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for" % e.prefix)
+        ui.warn(_("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for") % e.prefix)
     except UnknownPrefix, e:
-        ui.warn("The provided prefix - %s - could not be found in the bugs database." % e.prefix)
+        ui.warn(_("The provided prefix - %s - could not be found in the bugs database.") % e.prefix)
     except AmbiguousUser, e:
-        ui.warn("The provided user - %s - matched more than one user: %s" % (e.user, e.matched))
+        ui.warn(_("The provided user - %s - matched more than one user: %s") % (e.user, e.matched))
     except UnknownUser, e:
-        ui.warn("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user." % e.user)
+        ui.warn(_("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user.") % e.user)
     except UnknownCommand, e:
-        ui.warn("No such command '%s'" % e.cmd)
+        ui.warn(_("No such command '%s'") % e.cmd)
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
-cmdtable = {"bug|b": (cmd,[('f', 'force', False, 'Force this exact username'),
-                           ('r', 'resolved', False, 'List resolved bugs'),
-                           ('o', 'owner', '*', 'Specify an owner to list by'),
-                           ('g', 'grep', '', 'Filter titles by STRING')],'cmd [args]')}
+cmdtable = {"bug|b": (cmd,[('f', 'force', False, _('Force this exact username')),
+                           ('r', 'resolved', False, _('List resolved bugs')),
+                           ('o', 'owner', '*', _('Specify an owner to list by')),
+                           ('g', 'grep', '', _('Filter titles by STRING'))],_("cmd [args]"))}
