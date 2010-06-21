@@ -1,5 +1,11 @@
-#!/usr/bin/env python
-
+# bugs.py - Distributed Bug Tracker Extention for Mercurial
+#
+# Copyright 2010 Michael Diamond <michael@digitalgemstones.com>
+#
+# This software may be used and distributed according to the terms of the
+# GNU General Public License version 2 or any later version.
+# http://www.gnu.org/licenses/licenses.html
+# http://www.gnu.org/licenses/gpl.html
 
 #
 # Imports
@@ -11,14 +17,45 @@ from mercurial.i18n import _
 from mercurial import hg
 
 """
-HgBugs - A lightweight bug tracker for Mercurial
+HgBugs - A lightweight distributed bug tracker for Mercurial
 
-Version 0.2.0
+Version 0.5.0 - Beta
 
 Based off and built using Steve Losh's brilliantly simple task manager t
 (http://stevelosh.com/projects/t/) the fundamental principle is 
 'Get things done, not organized', and like t, 
-"the only way to make your bug list prettier is to finish some damn tasks."
+"the only way to make your bug list prettier is to fix some damn bugs."
+
+That said, HgBugs has many powerful additions to t, without any of the bloat
+and burden of setting up, maintaining, or using a traditional bug tracker.
+
+You can use HgBugs exactly like t, add, rename, resolve, and list work almost
+exactly like t out of the box, with the added benefit that wherever you are in
+a repository, you maintain a single bugs database in the root of the repository.
+
+But you can do more with HgBugs.  The edit, details, and comment commands allow
+you to track additional information about the bugs, like expected vs. actual
+results, and whatever you'd like.  The details file is a plain text file, and
+can contain any content you desire.
+
+You can also assign bugs to specific individuals - either based on their
+commit names or not - and list lets you filter by owner to see what tasks
+are in your care.
+
+HgBugs is powerful enough to support several different workflow complexities,
+from an individual just tracking tasks in a repository, all the way up to a small,
+distributed team of managers and developers who need to be able to report and 
+manage, and assign bugs, tasks, and issues, share details, and express their opinions.
+
+However, HgBugs is not intended to be be a replacement for large scale bug trackers
+like Jira and Bugzilla.  Most notably, (at present) HgBugs is a command line tool.
+There is no centralized bug list or web access, and many of the features in such 
+larger projects are lacking, notably the ability to categorize bugs and to provide
+resolution reasons, like fixed or duplicate - of course these could be done manually
+in the details, but there is no such built in functionality.
+
+If you find many of those extra features to be unhelpful bloat when you're trying
+to keep track of your smaller projects, however, HgBugs is the tool to use!
 """
 
 #
@@ -615,7 +652,6 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         ui.warn("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user." % e.user)
     except UnknownCommand, e:
         ui.warn("No such command '%s'" % e.cmd)
-        
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
 cmdtable = {"bug|b": (cmd,[('f', 'force', False, 'Force this exact username'),
