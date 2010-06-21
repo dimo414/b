@@ -54,15 +54,16 @@ class UnknownPrefix(Exception):
 
 class AmbiguousUser(Exception):
     """Raised when trying to use a user prefix that could identify multiple users."""
-    def __init__(self, prefix):
+    def __init__(self, user, matched):
         super(AmbiguousUser, self).__init__()
-        self.prefix = prefix
+        self.user = user
+        self.matched = matched
 
 class UnknownUser(Exception):
     """Raised when trying to use a user prefix that does not match any users."""
-    def __init__(self, prefix):
+    def __init__(self, user):
         super(UnknownUser, self).__init__()
-        self.prefix = prefix
+        self.user = user
 
 class UnknownCommand(Exception):
     """Raised when trying to run an unknown command."""
@@ -237,6 +238,7 @@ class BugsDict(object):
     
     def write(self):
         """Flush the finished and unfinished tasks to the files on disk."""
+        _mkdir_p(self.bugsdir)
         path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
         if os.path.isdir(path):
             raise InvalidTaskfile
@@ -363,9 +365,9 @@ class BugsDict(object):
         if not force:
             if not user in users:
                 usr = user.lower()
-                matched = [user for user in users if user.lower().startswith(usr)]
+                matched = [u for u in users if u.lower().startswith(usr)]
                 if len(matched) > 1:
-                    raise AmbiguousUser(matched)
+                    raise AmbiguousUser(user,matched)
                 if len(matched) == 0:
                     raise UnknownUser(user)
                 user = matched[0]
@@ -539,7 +541,20 @@ def cmd(ui,repo,cmd = '',*args,**opts):
     id prefix
         Takes a prefix and returns the full id of that bug
     
+    Config Options
     
+    Bugs has two configuration settings, both of which are optional, and should be put in the [bugs]
+    section of any config file.
+    
+    user
+        You can specify a user name for bug tracking, or 'hg.user' if you wish to use your commit name
+        The bug tracker will work absolutely fine without this setting, but it is recommended if you
+        will be working with multiple people
+    
+    dir
+        Allows you to specify (relative to the repo root) where the bugs database should go.
+        The default is '.bugs'
+        
     """
     text = (' '.join(args)).strip();
     if len(args) > 0:
@@ -585,21 +600,21 @@ def cmd(ui,repo,cmd = '',*args,**opts):
             raise UnknownCommand(cmd)
     
     except NoDetails, e:
-        pass
+        ui.warn("%s has no associated details file.  Use the edit command to create and populate one." % e.prefix)
     except InvalidDetailsFile, e:
-        pass
+        ui.warn("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?")
     except InvalidTaskfile, e:
-        pass
+        ui.warn("The path where the bugs database should be is blocked and cannot be created.  This could be caused by a manually created directory.")
     except AmbiguousPrefix, e:
-        pass
+        ui.warn("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for" % e.prefix)
     except UnknownPrefix, e:
-        pass
+        ui.warn("The provided prefix - %s - could not be found in the bugs database." % e.prefix)
     except AmbiguousUser, e:
-        pass
+        ui.warn("The provided user - %s - matched more than one user: %s" % (e.user, e.matched))
     except UnknownUser, e:
-        pass
+        ui.warn("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user." % e.user)
     except UnknownCommand, e:
-        pass
+        ui.warn("No such command '%s'" % e.cmd)
         
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
