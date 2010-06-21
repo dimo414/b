@@ -342,6 +342,38 @@ class BugsDict(object):
             users['Nobody'] = users['']
             del users['']
         return users
+    
+    def _get_user(self,user,force=False):
+        """ Given a user prefix, returns the appropriate username, or fails if
+        the correct user cannot be identified.
+        
+        'me' is a special username which maps to the username specified when
+        constructing the BugsDict.
+        'Nobody' (and prefixes of 'Nobody') is a special username which maps
+        internally to the empty string, indicating no assignment.
+        If force is true, the user 'Nobody' is used.  This is unadvisable,
+        avoid forcing the username 'Nobody'.
+        
+        If force is true, it assumes user is not a prefix and should be
+        assumed to exist already.
+        """
+        if user == 'me':
+            return self.user
+        if user == 'Nobody':
+            return ''
+        users = self._users_list().keys()
+        if not force:
+            if not user in users:
+                usr = user.lower()
+                matched = [u for u in users if u.lower().startswith(usr)]
+                if len(matched) > 1:
+                    raise AmbiguousUser(user,matched)
+                if len(matched) == 0:
+                    raise UnknownUser(user)
+                user = matched[0]
+            if user == 'Nobody': # needed twice, since users can also type a prefix to get it
+                return ''
+        return user
             
     
     def id(self, prefix):
@@ -381,36 +413,6 @@ class BugsDict(object):
         for (user,count) in users.items():
             out += _("%s: %s\n") % (user,str(count).rjust(ulen-len(user)))
         return out
-    
-    def _get_user(self,user,force=False):
-        """ Given a user prefix, returns the appropriate username, or fails if
-        the correct user cannot be identified.
-        
-        'me' is a special username which maps to the username specified when
-        constructing the BugsDict.
-        'Nobody' (and prefixes of 'Nobody') is a special username which maps
-        internally to the empty string, indicating no assignment.
-        If force is true, the user 'Nobody' is used.  This is unadvisable,
-        avoid forcing the username 'Nobody'.
-        
-        If force is true, it assumes user is not a prefix and should be
-        assumed to exist already.
-        """
-        if user == 'me':
-            return self.user
-        users = self._users_list().keys()
-        if not force:
-            if not user in users:
-                usr = user.lower()
-                matched = [u for u in users if u.lower().startswith(usr)]
-                if len(matched) > 1:
-                    raise AmbiguousUser(user,matched)
-                if len(matched) == 0:
-                    raise UnknownUser(user)
-                user = matched[0]
-            if user == 'Nobody':
-                user = ''
-        return user
                 
     def assign(self, prefix, user,force=False):
         """Specifies a new owner of the bug.  Tries to guess the correct user, or warns if it cannot find an appropriate user.
@@ -419,7 +421,9 @@ class BugsDict(object):
         task = self[prefix]
         user = self._get_user(user,force)
         task['owner'] = user
-        return _("Assigned %s: %s to %s" % (prefix, task['text'], user))
+        if user == '':
+            user = 'Nobody'
+        return _("Assigned %s: '%s' to %s" % (prefix, task['text'], user))
     
     def details(self, prefix):
         """ Provides additional details on the requested bug.
@@ -615,7 +619,7 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         elif cmd == 'users':
             ui.write(bd.users())
         elif cmd == 'assign':
-            bd.assign(id, subtext, opts['force'])
+            ui.write(bd.assign(id, subtext, opts['force']))
             bd.write()
         elif cmd == 'details':
             ui.write(bd.details(id))
