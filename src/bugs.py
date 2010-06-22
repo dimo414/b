@@ -387,7 +387,7 @@ class BugsDict(object):
         """Adds a bug with no owner to the task list"""
         task_id = ''
         while True:
-            # ensures the id is unique.  If this ever loops anywhere ever I'll be shocked, but nice to have
+            # ensures the id is unique, even if the bug title is the same as another
             task_id = _hash(text+task_id)
             if not task_id in self.bugs:
                 break
