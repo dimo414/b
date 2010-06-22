@@ -9,46 +9,29 @@
 
 """ A lightweight distributed bug tracker for Mercurial
 
-Version 0.5.0 - Beta
+Version 0.5.0 - Feature Complete Beta
 
-Based off and built using Steve Losh's brilliantly simple task manager t
-(http://stevelosh.com/projects/t/) the fundamental principle is 
-'Get things done, not organized', and tries to follow t's motto,
-"the only way to make your bug list prettier is to fix some damn bugs."
+"The only way to make your bug list prettier is to fix some damn bugs."
 
-That said, HgBugs has many powerful additions to t, without any of the bloat
-and burden of setting up, maintaining, or using a traditional bug tracker.
+HgBugs is a lightweight distributed bug tracker.  Stripped of many of the
+enterprise level bloat features common in larger bug systems, HgBugs
+lets you track issues, bugs, and features without being bogged down
+in extra metadata that is ultimately completly unhelpful.
 
-You can use HgBugs exactly like t, add, rename, resolve, and list work almost
-exactly like t out of the box, with the added benefit that wherever you are in
-a repository, you maintain a single bugs database in the root of the repository.
+HgBugs has functionality to add, rename, list, resolve and reopen bugs
+and keep everything as simple as a single line of text describing each one.
 
-But you can do more with HgBugs.  You can reopen issues - a feature starkly lacking
-from t.  The edit, details, and comment commands allow you to track additional
-information about the bugs, like stack traces and expected results, and 
-whatever other information you'd like.  The details file is a plain text file, and
-can contain any content you desire.
+But if and when you need more than that, HgBugs scales cleanly to allow
+you to add details that can't be properly contained in a consice title
+such as stack traces, line numbers, and the like, and allows you to
+add comments to bugs as time goes on.
 
-You can also assign bugs to specific individuals - either based on their
-commit names or not - and list lets you filter by owner to see what tasks
-are in your care.
+HgBugs also works with teams, allowing you to assign bugs to different users
+and keep track of bugs assigned to you.
 
-HgBugs is powerful enough to support several different workflow complexities,
-from an individual just tracking tasks in a repository, all the way up to a small,
-distributed team of managers and developers who need to be able to report,  
-manage, and assign bugs, tasks, and issues, share details, and express their opinions.
-
-However, HgBugs is not intended to be be a replacement for large scale bug trackers
-like Jira, Bugzilla, and the upcoming Bugs Everywhere.  Most notably, (at present)
-HgBugs is just a command line tool.  There is no centralized bug list or web access,
-nor any GUI interface, and many of the features in such larger projects are lacking,
-notably any kind of warning or notification when a bug is reassigned, and the ability
-to categorize bugs and to provide resolution reasons, like fixed or duplicate - 
-of course these could all be done manually, but there is no such built in functionality.
-
-If you find many of those extra features to be unhelpful bloat when you're trying
-to keep track of your smaller projects, and you don't care to waste time organizing,
-categorizing, sorting, and however, HgBugs is the tool to use!
+However, HgBugs is a lightweight tool, and if there are additional features
+you know you need but aren't described here, it may not be the tool for you.
+See the README file for more details on what you can, and can't, do with HgBugs.
 """
 
 #
@@ -423,9 +406,11 @@ class BugsDict(object):
         return out
                 
     def assign(self, prefix, user,force=False):
-        """Specifies a new owner of the bug.  Tries to guess the correct user, or warns if it cannot find an appropriate user.
+        """Specifies a new owner of the bug.  Tries to guess the correct user,
+		or warns if it cannot find an appropriate user.
         
-        Using the -f flag will create a new user with that exact name, it will not try to guess, or warn the user."""
+        Using the -f flag will create a new user with that exact name,
+		it will not try to guess, or warn the user."""
         task = self[prefix]
         user = self._get_user(user,force)
         task['owner'] = user
@@ -582,7 +567,7 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         
             -r list resolved bugs.
         
-            -o list bugs assigned to owner.  '*' will list all bugs, 'me' will list all bugs assigned to the current user.
+            -o list bugs assigned to owner.  '*' will list all bugs, 'me' will list all bugs assigned to the current user, and 'Nobody' will list all unassigned bugs.
         
             -g filter by the search string appearing in the title
         
@@ -597,7 +582,7 @@ def cmd(ui,repo,cmd = '',*args,**opts):
     user
         You can specify a user name for bug tracking, or 'hg.user' if you wish to use your commit name
         The bug tracker will work absolutely fine without this setting, but it is recommended if you
-        will be working with multiple people
+        will be working with multiple people.
     
     dir
         Allows you to specify (relative to the repo root) where the bugs database should go.
