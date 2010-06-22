@@ -13,7 +13,7 @@ Version 0.5.0 - Beta
 
 Based off and built using Steve Losh's brilliantly simple task manager t
 (http://stevelosh.com/projects/t/) the fundamental principle is 
-'Get things done, not organized', and like t, 
+'Get things done, not organized', and tries to follow t's motto,
 "the only way to make your bug list prettier is to fix some damn bugs."
 
 That said, HgBugs has many powerful additions to t, without any of the bloat
@@ -23,9 +23,10 @@ You can use HgBugs exactly like t, add, rename, resolve, and list work almost
 exactly like t out of the box, with the added benefit that wherever you are in
 a repository, you maintain a single bugs database in the root of the repository.
 
-But you can do more with HgBugs.  The edit, details, and comment commands allow
-you to track additional information about the bugs, like expected vs. actual
-results, and whatever you'd like.  The details file is a plain text file, and
+But you can do more with HgBugs.  You can reopen issues - a feature starkly lacking
+from t.  The edit, details, and comment commands allow you to track additional
+information about the bugs, like stack traces and expected results, and 
+whatever other information you'd like.  The details file is a plain text file, and
 can contain any content you desire.
 
 You can also assign bugs to specific individuals - either based on their
@@ -34,18 +35,20 @@ are in your care.
 
 HgBugs is powerful enough to support several different workflow complexities,
 from an individual just tracking tasks in a repository, all the way up to a small,
-distributed team of managers and developers who need to be able to report and 
+distributed team of managers and developers who need to be able to report,  
 manage, and assign bugs, tasks, and issues, share details, and express their opinions.
 
 However, HgBugs is not intended to be be a replacement for large scale bug trackers
-like Jira and Bugzilla.  Most notably, (at present) HgBugs is a command line tool.
-There is no centralized bug list or web access, and many of the features in such 
-larger projects are lacking, notably the ability to categorize bugs and to provide
-resolution reasons, like fixed or duplicate - of course these could be done manually
-in the details, but there is no such built in functionality.
+like Jira, Bugzilla, and the upcoming Bugs Everywhere.  Most notably, (at present)
+HgBugs is just a command line tool.  There is no centralized bug list or web access,
+nor any GUI interface, and many of the features in such larger projects are lacking,
+notably any kind of warning or notification when a bug is reassigned, and the ability
+to categorize bugs and to provide resolution reasons, like fixed or duplicate - 
+of course these could all be done manually, but there is no such built in functionality.
 
 If you find many of those extra features to be unhelpful bloat when you're trying
-to keep track of your smaller projects, however, HgBugs is the tool to use!
+to keep track of your smaller projects, and you don't care to waste time organizing,
+categorizing, sorting, and however, HgBugs is the tool to use!
 """
 
 #
@@ -382,7 +385,12 @@ class BugsDict(object):
     
     def add(self, text):
         """Adds a bug with no owner to the task list"""
-        task_id = _hash(text)
+        task_id = ''
+        while True:
+            # ensures the id is unique.  If this ever loops anywhere ever I'll be shocked, but nice to have
+            task_id = _hash(text+task_id)
+            if not task_id in self.bugs:
+                break
         self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': self.user, 'text': text, 'time': time.time()}
     
     def rename(self, prefix, text):
