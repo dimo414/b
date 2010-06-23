@@ -54,3 +54,30 @@ time organizing, categorizing, and sorting however, HgBugs is the tool to use!
 
 
 Some Suggested Use Cases:
+
+A single developer, working on a small project, can turn that into a version
+controlled project with a simple 'hg init', and with HgBugs, he (or she) also
+gets a fully functional bug tracker to boot, no additional setup required!
+
+Working on a website, you could very easily (and I might do this myself 
+soon enough) write a little PHP script which takes bug reports and logs 
+them to HgBugs.  I often find the closer to where my workflow a tool is
+is the easier it is to use, so integrating it right into the website
+makes a lot of sense.
+
+Working on a small project with a few other team members is ideal for HgBugs,
+it's powerful enough to let everyone track what they need to do, and allow
+everyone to contribute what they can to any of the bugs on file.  They can
+search titles for matching bugs, and even grep through the details directory
+to find details matching what they're looking for.
+
+Working on a larger project with lots of team members starts getting questionable,
+as many of the powerful features larger projects provide start to really show
+their worth.  However in my experience serveral large companies I've worked for
+or with have drastically underutilized the power of their bug trackers, to the 
+point where all the complexity and extra metadata is just wasted space and fluff.
+That's not to say that HgBugs is necessarily a good alternative for a large company,
+especially if you deny your employees access to anything they don't need-to-know
+distributed version control, and therefore HgBugs is certainly not for you.
+But it's worth asking yourself if you really benefit from all the extra tools;
+many companies could get by just fine with the features HgBugs provides.
