@@ -46,12 +46,6 @@ from mercurial import hg
 #
 # Exceptions
 #
-class NoDetails(Exception):
-    def __init__(self,prefix):
-        """Raised when user requests details on a bug with no details"""
-        super(NoDetails, self).__init__()
-        self.prefix = prefix
-
 class InvalidDetailsFile(Exception):
     def __init__(self,prefix):
         """Raised when a bug's details file is invalid (is a dir)"""
@@ -430,25 +424,26 @@ class BugsDict(object):
         """
         task = self[prefix] # confirms prefix does exist
         path = self._get_details_path(task['id'])[1]
-        if (not os.path.exists(path)):
-            raise NoDetails(prefix)
-        if os.path.isdir(path):
-            raise InvalidDetailsFile(prefix)
-        
-        f = open(path)
-        text = f.read()
-        f.close()
-        
-        text = re.sub("(?m)^#.*\n?", "", text)
-        
-        while True:
-            oldtext = text
-            retext = re.sub("\[\w+\]\s+\[", "[", text)
-            text = retext
-            if oldtext == retext:
-                break
-        
-        text = re.sub("\[\w+\]\s*$", "", text)
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                raise InvalidDetailsFile(prefix)
+            
+            f = open(path)
+            text = f.read()
+            f.close()
+            
+            text = re.sub("(?m)^#.*\n?", "", text)
+            
+            while True:
+                oldtext = text
+                retext = re.sub("\[\w+\]\s+\[", "[", text)
+                text = retext
+                if oldtext == retext:
+                    break
+            
+            text = re.sub("\[\w+\]\s*$", "", text)
+        else:
+            text = 'No Details File Found.'
         
         header = "Title: %s\nID: %s\n" % (task['text'],task['id'])
         if task['owner'] != '':
@@ -573,21 +568,6 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         
     id prefix
         Takes a prefix and returns the full id of that bug
-    
-    Config Options
-    
-    Bugs has two configuration settings, both of which are optional, and should be put in the [bugs]
-    section of any config file.
-    
-    user
-        You can specify a user name for bug tracking, or 'hg.user' if you wish to use your commit name
-        The bug tracker will work absolutely fine without this setting, but it is recommended if you
-        will be working with multiple people.
-    
-    dir
-        Allows you to specify (relative to the repo root) where the bugs database should go.
-        The default is '.bugs'
-        
     """
     text = (' '.join(args)).strip();
     if len(args) > 0:
@@ -633,8 +613,6 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         else:
             raise UnknownCommand(cmd)
     
-    except NoDetails, e:
-        ui.warn(_("%s has no associated details file.  Use the edit command to create and populate one.") % e.prefix)
     except InvalidDetailsFile, e:
         ui.warn(_("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?"))
     except InvalidTaskfile, e:
