@@ -185,9 +185,13 @@ Using HgBugs:
 FAQ:
 	How well does HgBugs scale?
 		HgBugs is still well in beta, and it has not been fully tested or benchmarked.
-		However test bug lists of more than 20,000 records have been constructed
-		and HgBugs has responded excellently, taking less than a second to add
+		However test bug lists of more than 120,000 records have been constructed
+		and HgBugs has responded excellently, taking just a second or two to add
 		a record, and even less time to list bugs, filtering by owner or by grep.
+		Of course, you would have to work very hard to ever reach a bug list even
+		close to that number, and long before you get there you'll discover you
+		need to switch to something more powerful, so for all intents and purposes
+		it'll handle everything you can throw at it.
 		
 	I would really like to be able to categorize my bugs, or detail how the bug
 	was resolved, why isn't that possible?
@@ -214,16 +218,13 @@ FAQ:
 		with any (distributed) tracker.
 		
 	Can I use HgBugs in a corporate environment?
-		HgBugs is released under GPL2+ (for now - if it is refactored to work
-		with any DVCS and no longer uses Mercurial API calls, it will likely
-		be released under an MIT license - which wouldn't change the answer
-		to this question) so yes, you may.  However you may not distribute
-		HgBugs or any derived works under any license that is incompatible
-		with the GPL2+.  If you're unsure, there's lots of information
-		on the details of this license online, and you are welcome to contact
-		me with questions.
+		HgBugs is released under GPL2+ so yes, you may.  However you may
+		not distribute HgBugs or any derived works under any other license 
+		than the GPL2+.  If you're unsure of what you can or cannot do,
+		there's lots of information on the details of this license online,
+		and you are welcome to contact me with questions.
 	
-	I have an idea for a feature, what should I do?
+	I have an idea for a feature, or a bug to report, what should I do?
 		HgBugs is released as open source software, so experiment, make it
 		yourself if you feel so inclined.  You're also welcome to email me
 		with suggestions, questions or code changes.  Or even pull the
