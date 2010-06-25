@@ -1,4 +1,4 @@
-# bugs.py - Distributed Bug Tracker Extention for Mercurial
+# b.py - Distributed Bug Tracker Extention for Mercurial
 #
 # Copyright 2010 Michael Diamond <michael@digitalgemstones.com>
 #
@@ -7,31 +7,31 @@
 # http://www.gnu.org/licenses/licenses.html
 # http://www.gnu.org/licenses/gpl.html
 
-""" A lightweight distributed bug tracker for Mercurial
+""" A lightweight distributed bug tracker for Mercurial based projects
 
 Version 0.5.0 - Feature Complete Beta
 
 "The only way to make your bug list prettier is to fix some damn bugs."
 
-HgBugs is a lightweight distributed bug tracker.  Stripped of many of the
-enterprise level bloat features common in larger bug systems, HgBugs
+b is a lightweight distributed bug tracker.  Stripped of many of the
+enterprise level bloat features common in larger bug systems, b
 lets you track issues, bugs, and features without being bogged down
-in extra metadata that is ultimately completly unhelpful.
+in extra metadata that is ultimately completely unhelpful.
 
-HgBugs has functionality to add, rename, list, resolve and reopen bugs
+b has functionality to add, rename, list, resolve and reopen bugs
 and keep everything as simple as a single line of text describing each one.
 
-But if and when you need more than that, HgBugs scales cleanly to allow
-you to add details that can't be properly contained in a consice title
+But if and when you need more than that, b scales cleanly to allow
+you to add details that can't be properly contained in a concise title
 such as stack traces, line numbers, and the like, and allows you to
 add comments to bugs as time goes on.
 
-HgBugs also works with teams, allowing you to assign bugs to different users
+b also works with teams, allowing you to assign bugs to different users
 and keep track of bugs assigned to you.
 
-However, HgBugs is a lightweight tool, and if there are additional features
+However, b is a lightweight tool, and if there are additional features
 you know you need but aren't described here, it may not be the tool for you.
-See the README file for more details on what you can, and can't, do with HgBugs.
+See the README file for more details on what you can, and can't, do with b.
 """
 
 #
@@ -231,7 +231,7 @@ class BugsDict(object):
         self.bugsdir = bugsdir
         self.user = user
         self.file = 'bugs'
-        self.detailsdir = '.details'
+        self.detailsdir = 'details'
         self.bugs = {}
         self.init_details = ("# Lines starting with '#' and sections without content\n# are not displayed by a call to 'details'\n#\n"
         "[paths]\n# Paths related to this bug.\n# suggested format: REPO_PATH:LINENUMBERS\n\n\n"
@@ -530,7 +530,7 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         Renames The bug denoted by prefix to text.   You can use sed-style substitution strings if so desired.
         
     users
-        Displays a list of all users, and the nuber of open bugs assigned to each of them
+        Displays a list of all users, and the number of open bugs assigned to each of them
         
     assign prefix username [-f]
         Assigns bug denoted by prefix to username.  Username can be a lowercase prefix of
@@ -538,8 +538,8 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         and assign the bug to the exact username specified, or if the user does not already
         exist in the bugs system, use the -f flag to force the name.
         
-        Use 'me' to assign
-        the bug to the current user, and 'Nobody' to remove its assignment.
+        Use 'me' to assign the bug to the current user,
+        and 'Nobody' to remove its assignment.
         
     details prefix
         Prints the extended details of the specified bug
@@ -629,7 +629,7 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         ui.warn(_("No such command '%s'") % e.cmd)
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
-cmdtable = {"bug|b": (cmd,[('f', 'force', False, _('Force this exact username')),
+cmdtable = {"b|bug|bugs": (cmd,[('f', 'force', False, _('Force this exact username')),
                            ('r', 'resolved', False, _('List resolved bugs')),
                            ('o', 'owner', '*', _('Specify an owner to list by')),
                            ('g', 'grep', '', _('Filter titles by STRING'))],_("cmd [args]"))}
