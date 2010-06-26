@@ -9,7 +9,7 @@
 
 """ A lightweight distributed bug tracker for Mercurial based projects
 
-Version 0.5.1 - Feature Complete Beta
+Version 0.5.2 - Feature Complete Beta
 
 "The only way to make your bug list prettier is to fix some damn bugs."
 
@@ -41,7 +41,7 @@ import os, errno, re, hashlib, sys, subprocess, time
 from operator import itemgetter
 from datetime import datetime
 from mercurial.i18n import _
-from mercurial import hg
+from mercurial import hg,commands
 
 #
 # Exceptions
@@ -518,6 +518,17 @@ class BugsDict(object):
 #
 # cmd name        function call
 #
+def _track(dir,ui,repo):
+    """ Identifies the files that need to be tracked and adds them. """
+    ui.pushbuffer()
+    commands.status(ui,repo)
+    stat = ui.popbuffer()
+    stat = re.sub("(?m)^(?!\?\s+%s).*\n?" % dir, "", stat)
+    stat = re.sub("(?m)^\?\s*","",stat).strip()
+    files = stat.split("\n")
+    for file in files:
+        commands.add(ui,repo,file)
+
 def cmd(ui,repo,cmd = '',*args,**opts):
     """ Distributed Bug Tracker For Mercurial
     
@@ -583,6 +594,7 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         path = repo.root
         os.chdir(path)
         bd = BugsDict(bugsdir,user)
+        _track(bugsdir,ui,repo)
         if cmd == 'add':
             bd.add(text)
             bd.write()

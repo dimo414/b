@@ -7,7 +7,7 @@
 # http://www.gnu.org/licenses/licenses.html
 # http://www.gnu.org/licenses/gpl.html
 
-Version 0.5.0 - Feature Complete Beta
+Version 0.5.2 - Feature Complete Beta
 
 Introduction:
 	
@@ -200,15 +200,13 @@ FAQ:
 		intend to list or sort bugs by this information, it would really work 
 		no differently than storing it as metadata.
 	
-	Why doesn't b commit my changes or add my details files?
-		Adding the files to the repositories automatically is likely an upcoming
-		feature.  However b does not commit after bugs are filed or changed
-		intentionally.  The hope is that b acts completely transparently to 
-		the underlying repository, and that commits are never solely about bugs
-		(unless the user chooses so).  This allows the repository structure and
-		the commit messages to remain concerned with the source code, and not
-		have it fill up with uninformative messages about every little thing
-		you do with b.
+	Why doesn't b commit my changes?
+		b does not commit after bugs are filed or changed intentionally.  
+		The hope is that b acts completely transparently to the underlying 
+		repository, and that commits are never solely about bugs (unless the
+		user chooses so).  This allows the repository structure and the commit 
+		messages to remain concerned with the source code, and not have it fill
+		up with uninformative messages about every little thing you do with b.
 	
 	Is b ever going to work with other DVCS?
 		b was built to be as compartmentalized from the Mercurial API
