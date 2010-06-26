@@ -81,7 +81,7 @@ Some Suggested Use Cases:
 
 Installing b:
 	
-	Like any Mercurial Extention, to install b edit a Mercurial config file
+	Like any Mercurial Extension, to install b edit a Mercurial config file
 	and add the following:
 	
 	[extensions]
@@ -160,7 +160,7 @@ Using b:
 	% hg b assign ID 'John Cleese'
 	If the specified username can't be found in the database, you'll be prompted to 
 	confirm that is the name you want to use, with the '-f' flag.  For ease of
-	assiging bugs, you can use a prefix of a user's name, and as long as it's not
+	assign bugs, you can use a prefix of a user's name, and as long as it's not
 	ambiguous, b will assign it to the matching username, and let you know
 	who it was ultimately assigned to so you can double check.  Assuming no other
 	users named John, calling:
