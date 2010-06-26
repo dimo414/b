@@ -9,7 +9,7 @@
 
 """ A lightweight distributed bug tracker for Mercurial based projects
 
-Version 0.5.0 - Feature Complete Beta
+Version 0.5.1 - Feature Complete Beta
 
 "The only way to make your bug list prettier is to fix some damn bugs."
 
@@ -443,7 +443,7 @@ class BugsDict(object):
             
             text = re.sub("\[\w+\]\s*$", "", text)
         else:
-            text = "No Details File Found.\n"
+            text = 'No Details File Found.'
         
         header = "Title: %s\nID: %s\n" % (task['text'],task['id'])
         if task['owner'] != '':
@@ -590,12 +590,12 @@ def cmd(ui,repo,cmd = '',*args,**opts):
             bd.rename(id, subtext)
             bd.write()
         elif cmd == 'users':
-            ui.write(bd.users())
+            ui.write(bd.users()+'\n')
         elif cmd == 'assign':
             ui.write(bd.assign(id, subtext, opts['force']))
             bd.write()
         elif cmd == 'details':
-            ui.write(bd.details(id))
+            ui.write(bd.details(id)+'\n')
         elif cmd == 'edit':
             bd.edit(id, ui.geteditor())
         elif cmd == 'comment':
@@ -607,26 +607,26 @@ def cmd(ui,repo,cmd = '',*args,**opts):
             bd.reopen(id)
             bd.write()
         elif cmd == 'list':
-            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep']))
+            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep'])+'\n')
         elif cmd == 'id':
-            ui.write(bd.id(id))
+            ui.write(bd.id(id)+'\n')
         else:
             raise UnknownCommand(cmd)
     
     except InvalidDetailsFile, e:
-        ui.warn(_("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?"))
+        ui.warn(_("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?\n"))
     except InvalidTaskfile, e:
-        ui.warn(_("The path where the bugs database should be is blocked and cannot be created.  This could be caused by a manually created directory."))
+        ui.warn(_("The path where the bugs database should be is blocked and cannot be created.  This could be caused by a manually created directory.\n"))
     except AmbiguousPrefix, e:
-        ui.warn(_("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for") % e.prefix)
+        ui.warn(_("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for\n") % e.prefix)
     except UnknownPrefix, e:
-        ui.warn(_("The provided prefix - %s - could not be found in the bugs database.") % e.prefix)
+        ui.warn(_("The provided prefix - %s - could not be found in the bugs database.\n") % e.prefix)
     except AmbiguousUser, e:
-        ui.warn(_("The provided user - %s - matched more than one user: %s") % (e.user, e.matched))
+        ui.warn(_("The provided user - %s - matched more than one user: %s\n") % (e.user, e.matched))
     except UnknownUser, e:
-        ui.warn(_("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user.") % e.user)
+        ui.warn(_("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user.\n") % e.user)
     except UnknownCommand, e:
-        ui.warn(_("No such command '%s'") % e.cmd)
+        ui.warn(_("No such command '%s'\n") % e.cmd)
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
 cmdtable = {"b|bug|bugs": (cmd,[('f', 'force', False, _('Force this exact username')),
