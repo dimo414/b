@@ -443,7 +443,7 @@ class BugsDict(object):
             
             text = re.sub("\[\w+\]\s*$", "", text)
         else:
-            text = 'No Details File Found.'
+            text = "No Details File Found.\n"
         
         header = "Title: %s\nID: %s\n" % (task['text'],task['id'])
         if task['owner'] != '':
