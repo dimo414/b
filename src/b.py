@@ -523,11 +523,14 @@ def _track(dir,ui,repo):
     ui.pushbuffer()
     commands.status(ui,repo)
     stat = ui.popbuffer()
+    print stat
     stat = re.sub("(?m)^(?!\?\s+%s).*\n?" % dir, "", stat)
     stat = re.sub("(?m)^\?\s*","",stat).strip()
     files = stat.split("\n")
+    ui.pushbuffer()
     for file in files:
         commands.add(ui,repo,file)
+    ui.popbuffer()
 
 def cmd(ui,repo,cmd = '',*args,**opts):
     """ Distributed Bug Tracker For Mercurial
