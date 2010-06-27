@@ -1,1 +1,3 @@
-Need to add bug files automatically | owner:Michael, open:True, id:27e00056bfc988ab41c023b5c0a9db9f5e9fa527, time:1277581398.52
+Need to add bug files automatically                                               | owner:Michael, open:True, id:27e00056bfc988ab41c023b5c0a9db9f5e9fa527, time:1277581398.52
+Files should be added to mercurial at the end, not the begining of the call       | owner:Michael, open:True, id:6ba1ae74c48a6fd84c5d0698fa8169a28e88b343, time:1277680246.97
+Bugs with no details but a details file should act like there is not details file | owner:Michael, open:True, id:9f771c1b687a119eb8e6f9a8443f2c0dde30776b, time:1277680715.42
