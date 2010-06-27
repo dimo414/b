@@ -519,17 +519,9 @@ class BugsDict(object):
 # cmd name        function call
 #
 def _track(dir,ui,repo):
-    """ Identifies the files that need to be tracked and adds them. """
+    """ Adds new files to Mercurial. """
     ui.pushbuffer()
-    commands.status(ui,repo)
-    stat = ui.popbuffer()
-    print stat
-    stat = re.sub("(?m)^(?!\?\s+%s).*\n?" % dir, "", stat)
-    stat = re.sub("(?m)^\?\s*","",stat).strip()
-    files = stat.split("\n")
-    ui.pushbuffer()
-    for file in files:
-        commands.add(ui,repo,file)
+    commands.add(ui,repo,dir)
     ui.popbuffer()
 
 def cmd(ui,repo,cmd = '',*args,**opts):
