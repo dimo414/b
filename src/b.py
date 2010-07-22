@@ -9,8 +9,6 @@
 
 """ A lightweight distributed bug tracker for Mercurial based projects
 
-Version 0.5.2 - Feature Complete Beta
-
 "The only way to make your bug list prettier is to fix some damn bugs."
 
 b is a lightweight distributed bug tracker.  Stripped of many of the
@@ -42,6 +40,11 @@ from operator import itemgetter
 from datetime import datetime
 from mercurial.i18n import _
 from mercurial import hg,commands
+
+#
+# Version
+#
+version = _("b Version 0.5.3 - Feature Complete Beta built 7-22-10")
 
 #
 # Exceptions
@@ -369,6 +372,7 @@ class BugsDict(object):
             if not task_id in self.bugs:
                 break
         self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': self.user, 'text': text, 'time': time.time()}
+        return _("Added bug %s...") % task_id[:10]
     
     def rename(self, prefix, text):
         """Renames the bug
@@ -443,12 +447,12 @@ class BugsDict(object):
             
             text = re.sub("\[\w+\]\s*$", "", text)
         else:
-            text = 'No Details File Found.'
+            text = _('No Details File Found.')
         
-        header = "Title: %s\nID: %s\n" % (task['text'],task['id'])
+        header = _("Title: %s\nID: %s\n") % (task['text'],task['id'])
         if task['owner'] != '':
-            header = header + ("Owned By: %s\n" % task['owner'])
-        header = header + ("Filed On: %s\n\n" % _datetime(task['time']))
+            header = header + (_("Owned By: %s\n") % task['owner'])
+        header = header + (_("Filed On: %s\n\n") % _datetime(task['time']))
         text = header + text
         
         return text.strip()
@@ -520,9 +524,10 @@ class BugsDict(object):
 #
 def _track(dir,ui,repo):
     """ Adds new files to Mercurial. """
-    ui.pushbuffer()
-    commands.add(ui,repo,dir)
-    ui.popbuffer()
+    if os.path.exists(dir):
+		ui.pushbuffer()
+		commands.add(ui,repo,dir)
+		ui.popbuffer()
 
 def cmd(ui,repo,cmd = '',*args,**opts):
     """ Distributed Bug Tracker For Mercurial
@@ -574,8 +579,13 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         
     id prefix
         Takes a prefix and returns the full id of that bug
+    
+    version
+        Outputs the version number of b being used in this repository
     """
     text = (' '.join(args)).strip();
+    id = ''
+    subtext = ''
     if len(args) > 0:
         id = args[0]
     if len(args) > 1:
@@ -589,9 +599,8 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         path = repo.root
         os.chdir(path)
         bd = BugsDict(bugsdir,user)
-        _track(bugsdir,ui,repo)
         if cmd == 'add':
-            bd.add(text)
+            ui.write(bd.add(text)+'\n')
             bd.write()
         elif cmd == 'rename':
             bd.rename(id, subtext)
@@ -599,7 +608,7 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         elif cmd == 'users':
             ui.write(bd.users()+'\n')
         elif cmd == 'assign':
-            ui.write(bd.assign(id, subtext, opts['force']))
+            ui.write(bd.assign(id, subtext, opts['force'])+'\n')
             bd.write()
         elif cmd == 'details':
             ui.write(bd.details(id)+'\n')
@@ -613,12 +622,17 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         elif cmd == 'reopen':
             bd.reopen(id)
             bd.write()
-        elif cmd == 'list':
+        elif cmd == 'list' or cmd == '':
             ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep'])+'\n')
         elif cmd == 'id':
             ui.write(bd.id(id)+'\n')
+        elif cmd == 'version':
+            ui.write(version+'\n')
         else:
             raise UnknownCommand(cmd)
+		
+		# Add all new files to Mercurial - does not commit
+        _track(bugsdir,ui,repo)
     
     except InvalidDetailsFile, e:
         ui.warn(_("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?\n"))
