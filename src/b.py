@@ -463,7 +463,7 @@ class BugsDict(object):
         path = self._get_details_path(task['id'])[1]
         if not os.path.exists(path):
             self._make_details_file(task['id'])
-        subprocess.call([editor, path])
+        subprocess.call(editor.split() + [path])
         #subprocess.call()
         #print _timestamp()
     
