@@ -1,0 +1,3 @@
+[patterns]
+**.py = LF
+**.txt = native 
