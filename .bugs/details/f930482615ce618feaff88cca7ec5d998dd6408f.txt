@@ -1,0 +1,49 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[paths]
+# Paths related to this bug.
+# suggested format: REPO_PATH:LINENUMBERS
+
+
+[details]
+# Additional details
+I think it would be handy for some methodologies to have a quick way to list bugs that were "resolved" without a details file. The idea (for these workflows) is that if there is a fix, the developer should have indicated what he did, and if the bug was closed by fiat, there should be an explicit comment to that effect.
+
+I think an easy way to see bugs where someone missed that would help these projects stay with their methodology, and would be more in keeping with the b philosophy than the alternative of requiring a details file before allowing the resolve command.
+
+The two lightbulbs (dim ones) that have gone on for me both involve modifying the list command. One: an extra argument to filter for no details: "hg b list -r -nd". Two: an extra token in the list output to indicate which bugs have a detail file and which don't:
+* b9 - gcd.py needs to validate inputs
+b5 - lcm.py should handle degenerate cases
+
+[expected]
+# The expected result
+
+
+[actual]
+# What happened instead
+
+
+[reproduce]
+# Reproduction steps
+
+
+[comments]
+# Comments and updates - leave your name
+By: Michael
+On: Wednesday, October 19 2011 07:16PM
+Hmm, that's an interesting idea.  I had intentionally not included such functionality for a couple of reasons.  The first and primary one was that I wanted it to be irrelevant to the user if a details file existed or not - hg b details __ works regardless, and a file is created automatically when a user tries to edit or comment, which feels really clean to me.  The other reason I hadn't implemented something like this is that it would require an O(n) operation on file-existance, which isn't the end of the world, but it's something I'd rather avoid, as it doesn't scale very well.
+
+A further issue with listing issues lacking files as a check for inappropriately closed bugs is that if you're working with a large enough project that you want to ensure resolutions are detailed, it seems likely to me many of the issues will already have details files.  Since the developer could just as easily create an empty details file, or a details file could already exist, it's not a very robust check against the bad use case you describe.
+
+Now this isn't to say I'm opposed to the idea in its entirety, but those are some of my concerns up front, you're welcome to disagree.
+
+
+There are a couple of other options I can think of, depending on exactly what you wanted:
+
+1. A config parameter that could be set to warn if missing or require a details file exists in order to mark it resolved.
+2. Add a parameter to 'resolve' to allow users to comment, something like: "hg resolve 45 fixed stack overflow exception"
+3. Combine 1 and 2, a config parameter that warns/requires users to have a comment when they resolve a bug
+
+
+With regards to your two ideas, filtering vs. tokens, the philosophy for b should be (IMO) always filter.  Adding additional markup is confusing and, should anyone have any output parsing scripts, would potentially damage that.  If it's possible, list should always look the same, regardless of the specifics being listed.
