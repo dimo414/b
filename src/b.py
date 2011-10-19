@@ -84,6 +84,12 @@ class UnknownUser(Exception):
         super(UnknownUser, self).__init__()
         self.user = user
 
+class AmbiguousCommand(Exception):
+    """Raised when trying to run a command by prefix that matches more than one command."""
+    def __init__(self, cmd):
+        super(AmbiguousCommand, self).__init__()
+        self.cmd = cmd
+
 class UnknownCommand(Exception):
     """Raised when trying to run an unknown command."""
     def __init__(self, cmd):
@@ -463,7 +469,7 @@ class BugsDict(object):
         path = self._get_details_path(task['id'])[1]
         if not os.path.exists(path):
             self._make_details_file(task['id'])
-        subprocess.call([editor, path])
+        subprocess.call(editor.split() + [path])
         #subprocess.call()
         #print _timestamp()
     
@@ -525,9 +531,9 @@ class BugsDict(object):
 def _track(dir,ui,repo):
     """ Adds new files to Mercurial. """
     if os.path.exists(dir):
-		ui.pushbuffer()
-		commands.add(ui,repo,dir)
-		ui.popbuffer()
+        ui.pushbuffer()
+        commands.add(ui,repo,dir)
+        ui.popbuffer()
 
 def cmd(ui,repo,cmd = '',*args,**opts):
     """ Distributed Bug Tracker For Mercurial
@@ -599,39 +605,75 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         path = repo.root
         os.chdir(path)
         bd = BugsDict(bugsdir,user)
-        if cmd == 'add':
-            ui.write(bd.add(text)+'\n')
+
+        def _add():
+            ui.write(bd.add(text) + '\n')
             bd.write()
-        elif cmd == 'rename':
+
+        def _rename():
             bd.rename(id, subtext)
             bd.write()
-        elif cmd == 'users':
-            ui.write(bd.users()+'\n')
-        elif cmd == 'assign':
-            ui.write(bd.assign(id, subtext, opts['force'])+'\n')
+
+        def _users():
+            ui.write(bd.users() + '\n')
+
+        def _assign():
+            ui.write(bd.assign(id, subtext, opts['force']) + '\n')
             bd.write()
-        elif cmd == 'details':
-            ui.write(bd.details(id)+'\n')
-        elif cmd == 'edit':
+
+        def _details():
+            ui.write(bd.details(id) + '\n')
+
+        def _edit():
             bd.edit(id, ui.geteditor())
-        elif cmd == 'comment':
+
+        def _comment():
             bd.comment(id, subtext)
-        elif cmd == 'resolve':
+
+        def _resolve():
             bd.resolve(id)
             bd.write()
-        elif cmd == 'reopen':
+
+        def _reopen():
             bd.reopen(id)
             bd.write()
-        elif cmd == 'list' or cmd == '':
-            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep'])+'\n')
-        elif cmd == 'id':
-            ui.write(bd.id(id)+'\n')
-        elif cmd == 'version':
-            ui.write(version+'\n')
+
+        def _list():
+            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep']) + '\n')
+
+        def _id():
+            ui.write(bd.id(id) + '\n')
+
+        def _version():
+            ui.write(version + '\n')
+
+        cmds = {
+                'add': _add,
+                'rename': _rename,
+                'users': _users,
+                'assign': _assign,
+                'details': _details,
+                'edit': _edit,
+                'comment': _comment,
+                'resolve': _resolve,
+                'reopen': _reopen,
+                'list': _list,
+                'id': _id,
+                'version': _version,
+               }
+
+        candidates = [c for c in cmds if c.startswith(cmd)]
+        real_candidate = [c for c in candidates if c == cmd]
+        if real_candidate:
+            cmds[cmd]()
+        elif len(candidates) > 1:
+            raise AmbiguousCommand(candidates)
+        elif len(candidates) == 1:
+            cmds[candidates[0]]()
         else:
             raise UnknownCommand(cmd)
-		
-		# Add all new files to Mercurial - does not commit
+        
+        # Add all new files to Mercurial - does not commit
         _track(bugsdir,ui,repo)
     
     except InvalidDetailsFile, e:
@@ -648,6 +690,8 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         ui.warn(_("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user.\n") % e.user)
     except UnknownCommand, e:
         ui.warn(_("No such command '%s'\n") % e.cmd)
+    except AmbiguousCommand, e:
+        ui.warn(_("Command ambiguous between: %s\n" % (', '.join(e.cmd))))
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
 cmdtable = {"b|bug|bugs": (cmd,[('f', 'force', False, _('Force this exact username')),
