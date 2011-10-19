@@ -531,9 +531,9 @@ class BugsDict(object):
 def _track(dir,ui,repo):
     """ Adds new files to Mercurial. """
     if os.path.exists(dir):
-		ui.pushbuffer()
-		commands.add(ui,repo,dir)
-		ui.popbuffer()
+        ui.pushbuffer()
+        commands.add(ui,repo,dir)
+        ui.popbuffer()
 
 def cmd(ui,repo,cmd = '',*args,**opts):
     """ Distributed Bug Tracker For Mercurial
@@ -672,8 +672,8 @@ def cmd(ui,repo,cmd = '',*args,**opts):
             cmds[candidates[0]]()
         else:
             raise UnknownCommand(cmd)
-		
-		# Add all new files to Mercurial - does not commit
+        
+        # Add all new files to Mercurial - does not commit
         _track(bugsdir,ui,repo)
     
     except InvalidDetailsFile, e:
