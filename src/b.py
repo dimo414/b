@@ -538,7 +538,7 @@ def _track(dir,ui,repo):
         commands.add(ui,repo,dir)
         ui.popbuffer()
 
-def cmd(ui,repo,cmd = '',*args,**opts):
+def cmd(ui,repo,cmd = 'list',*args,**opts):
     """ Distributed Bug Tracker For Mercurial
     
     List of Commands::
