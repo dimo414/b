@@ -10,5 +10,5 @@ Use consistent EOL markers and set up a .hgeol file                             
 Bugs with no details but a details file should act like there is not details file | owner:Michael, open:False, id:9f771c1b687a119eb8e6f9a8443f2c0dde30776b, time:1277680715.42
 edit doesn't handle editors with spaces properly                                  | owner:Michael, open:False, id:aad16b3f42cade7b71eb1cc92c490f77c7366084, time:1310458238.24
 Calling commands that expect an ID without passing an ID throws an exception      | owner:Michael, open:False, id:d33d694650de726f70ff49003835fe6cc61d8d6d, time:1277687733.59
-Optional sort list output sequentially or alphabetically                          | owner:Michael, open:True, id:f1eea79125e30a71e7d666c640905fcda86ba0dc, time:1319037412.65
+Optional sort list output chronologically or alphabetically                       | owner:Michael, open:True, id:f1eea79125e30a71e7d666c640905fcda86ba0dc, time:1319037412.65
 b Should provide some way to check for empty resolutions                          | owner:Michael, open:True, id:f930482615ce618feaff88cca7ec5d998dd6408f, time:1319066183.21

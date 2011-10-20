@@ -248,7 +248,7 @@ class BugsDict(object):
         "[expected]\n# The expected result\n\n\n"
         "[actual]\n# What happened instead\n\n\n"
         "[reproduce]\n# Reproduction steps\n\n\n"
-        "[comments]\n# Comments and updates - leave your name")
+        "[comments]\n# Comments and updates - leave your name\n")
         path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
         if os.path.isdir(path):
             raise InvalidTaskfile
@@ -501,7 +501,7 @@ class BugsDict(object):
         task = self[prefix]
         task['open'] = 'True'
     
-    def list(self,open=True,owner='*',grep=''):
+    def list(self,open=True,owner='*',grep='',alpha=False,chrono=False):
         """Lists all bugs, applying the given filters"""
         tasks = dict(self.bugs.items())
         
@@ -519,6 +519,10 @@ class BugsDict(object):
         else:
             plen = 0
         out = ''
+        if alpha:
+            small = sorted(small, key=lambda x: x['text'].lower())
+        if chrono:
+            small = sorted(small, key=itemgetter('time'))
         for task in small:
             out += _('%s - %s\n') % (task['prefix'].ljust(plen),task['text'])
         return out + _describe_print(len(small),open,owner,grep)
@@ -582,6 +586,10 @@ def cmd(ui,repo,cmd = '',*args,**opts):
             -o list bugs assigned to owner.  '*' will list all bugs, 'me' will list all bugs assigned to the current user, and 'Nobody' will list all unassigned bugs.
         
             -g filter by the search string appearing in the title
+            
+            -a list bugs alphabetically
+            
+            -c list bugs chronologically
         
     id prefix
         Takes a prefix and returns the full id of that bug
@@ -639,7 +647,7 @@ def cmd(ui,repo,cmd = '',*args,**opts):
             bd.write()
 
         def _list():
-            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep']) + '\n')
+            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep'], opts['alpha'], opts['chrono']) + '\n')
 
         def _id():
             ui.write(bd.id(id) + '\n')
@@ -698,7 +706,12 @@ def cmd(ui,repo,cmd = '',*args,**opts):
         ui.warn(_("Command ambiguous between: %s\n" % (', '.join(e.cmd))))
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
-cmdtable = {"b|bug|bugs": (cmd,[('f', 'force', False, _('Force this exact username')),
-                           ('r', 'resolved', False, _('List resolved bugs')),
-                           ('o', 'owner', '*', _('Specify an owner to list by')),
-                           ('g', 'grep', '', _('Filter titles by STRING'))],_("cmd [args]"))}
+cmdtable = {"b|bug|bugs": (cmd,[
+                                ('f', 'force', False, _('Force this exact username')),
+                                ('r', 'resolved', False, _('List resolved bugs')),
+                                ('o', 'owner', '*', _('Specify an owner to list by')),
+                                ('g', 'grep', '', _('Filter titles by STRING')),
+                                ('a', 'alpha', False, _('Sort list alphabetically')),
+                                ('c', 'chrono', False, _('Sort list chronologically'))
+                           ]
+                           ,_("cmd [args]"))}
