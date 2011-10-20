@@ -643,6 +643,9 @@ def cmd(ui,repo,cmd = '',*args,**opts):
 
         def _id():
             ui.write(bd.id(id) + '\n')
+            
+        def _help():
+            commands.help_(ui,'b')
 
         def _version():
             ui.write(version + '\n')
@@ -659,6 +662,7 @@ def cmd(ui,repo,cmd = '',*args,**opts):
                 'reopen': _reopen,
                 'list': _list,
                 'id': _id,
+                'help': _help,
                 'version': _version,
                }
 
