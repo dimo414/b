@@ -1,0 +1,34 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[paths]
+# Paths related to this bug.
+# suggested format: REPO_PATH:LINENUMBERS
+
+
+[details]
+# Additional details
+We cannot ensure that all terminals (notably windows) are utf-8 or unicode, as such users with terminals running other charsets need to be able to enter their issues in their encoding, and have that successfully stored as utf-8 in the bugs file
+hg b add - needs to accept a non-ascii string as a title, and store it as unicode/utf-8
+hg b rename - needs to also handle native encodings, and the pseudo sed replacement functionality needs to not break
+hg b assign - user names need to be converted to unicode, as do their prefix lookup
+hg b users - needs to output unicode users correctly in native encoding on all platforms
+hg b list - needs to output unicode issues correctly in native encoding on all platforms, and be able to grep against non-ascii matches
+hg b details - needs to output unicode titles in native encoding
+
+And all of that still leaves the details files unsafe - it's not clear we necessarily want to convert these files, since they get edited directly by the user's editor, but leaving them alone also doesn't seem desirable.  If we are to ensure unicode details files, we need to figure out some reasonably successful way to launch arbitrary editors in utf-8 mode.  Then details needs to be able to convert the details file to native encoding when outputting, and comment needs to take the native encoding and convert to utf-8 before writing.
+
+[expected]
+# The expected result
+
+
+[actual]
+# What happened instead
+
+
+[reproduce]
+# Reproduction steps
+
+
+[comments]
+# Comments and updates - leave your name
