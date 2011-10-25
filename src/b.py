@@ -692,9 +692,15 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     except InvalidTaskfile, e:
         ui.warn(_("The path where the bugs database should be is blocked and cannot be created.  This could be caused by a manually created directory.\n"))
     except AmbiguousPrefix, e:
-        ui.warn(_("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for\n") % e.prefix)
+        if (id == ''):
+            ui.warn(_("You need to provide an issue prefix.  Run list to get a unique prefix for the bug you are looking for.\n"))
+        else:
+            ui.warn(_("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for.\n") % e.prefix)
     except UnknownPrefix, e:
-        ui.warn(_("The provided prefix - %s - could not be found in the bugs database.\n") % e.prefix)
+        if (id == ''):
+            ui.warn(_("You need to provide an issue prefix.  Run list to get a unique prefix for the bug you are looking for.\n"))
+        else:
+            ui.warn(_("The provided prefix - %s - could not be found in the bugs database.\n") % e.prefix)
     except AmbiguousUser, e:
         ui.warn(_("The provided user - %s - matched more than one user: %s\n") % (e.user, e.matched))
     except UnknownUser, e:
