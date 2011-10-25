@@ -1,7 +1,7 @@
 Should output prefix of newly added bug if possible          | owner:Michael, open:True, id:1364b6de76f3b532867da63223a45d429ba08a46, time:1277687762.41
 list command reports no such file when bugs dir doesn't exist | owner:Michael, open:False, id:21d24c2b58102a88fa7d6ee78cd190c5b10dafa1, time:1278106675.1
 Need to add bug files automatically                          | owner:Michael, open:False, id:27e00056bfc988ab41c023b5c0a9db9f5e9fa527, time:1277581398.52
-missing unicode support                                      | owner:Michael, open:True, id:286b661789a9b4ae60ffd0754888cf43563ce668, time:1306670417.88
+missing unicode support                                      | owner:ArneBab, open:True, id:286b661789a9b4ae60ffd0754888cf43563ce668, time:1306670417.88
 add version command to report what version of b we're using  | owner:Michael, open:False, id:4982d102b75bda27e54c16293350ff561c248921, time:1278106694.44
 Ability to run read-only command from a specified revision -R | owner:Michael, open:True, id:6345fce4a284b182a376e1affa02eb774436689f, time:1319037514.92
 Files should be added to mercurial at the end, not the begining of the call | owner:Michael, open:False, id:6ba1ae74c48a6fd84c5d0698fa8169a28e88b343, time:1277680246.97
