@@ -531,13 +531,18 @@ class BugsDict(object):
 #
 # cmd name        function call
 #
-def _track(dir,ui,repo):
+def _track(ui,repo,dir):
     """ Adds new files to Mercurial. """
     if os.path.exists(dir):
         ui.pushbuffer()
         commands.add(ui,repo,dir)
         ui.popbuffer()
 
+def _cat(ui,repo,file,todir,rev=None):
+    ui.pushbuffer()
+    commands.cat(ui,repo,file,rev=rev,output=os.path.join(todir,file))
+    ui.popbuffer()
+    
 def cmd(ui,repo,cmd = 'list',*args,**opts):
     """ Distributed Bug Tracker For Mercurial
     
@@ -624,7 +629,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             revpath = os.path.join(tempdir,'b-'+rev)
             _mkdir_p(os.path.join(revpath,bugsdir))
             if not os.path.exists(os.path.join(revpath,bugsdir,'bugs')):
-                commands.cat(ui,repo,os.path.join(bugsdir,'bugs'),rev=rev,output=os.path.join(revpath,bugsdir,'bugs'))
+                _cat(ui,repo,os.path.join(bugsdir,'bugs'),revpath,rev)
             os.chdir(revpath)
 
         bd = BugsDict(bugsdir,user)
@@ -638,9 +643,9 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             if not os.path.exists(os.path.join(revpath,detfile)):
                 _mkdir_p(os.path.join(revpath,bugsdir,'details'))
                 os.chdir(path)
-                commands.cat(ui,repo,detfile,rev=rev,output=os.path.join(revpath,detfile))
+                _cat(detfile,revpath,rev,ui,repo)
                 os.chdir(revpath)
-                
+        
         def _add():
             ui.write(bd.add(text) + '\n')
             bd.write()
@@ -714,7 +719,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
         
         # Add all new files to Mercurial - does not commit
         if not opts['rev']:
-            _track(bugsdir,ui,repo)
+            _track(ui,repo,bugsdir)
     
     except InvalidDetailsFile, e:
         ui.warn(_("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?\n"))
