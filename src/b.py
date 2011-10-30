@@ -44,7 +44,7 @@ from mercurial import hg,commands
 #
 # Version
 #
-version = _("b Version 0.5.3 - Feature Complete Beta built 7-22-10")
+version = _("b Version 0.6.0 Release Candidate - built 11-1-11")
 
 #
 # Exceptions
@@ -587,7 +587,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     reopen prefix
         Marks the specified bug as open
         
-    list [--rev rev] [-r] [-o owner] [-g search]
+    list [--rev rev] [-r] [-o owner] [-g search] [-a|-c]
         Lists all bugs, with the following filters:
         
             -r list resolved bugs.

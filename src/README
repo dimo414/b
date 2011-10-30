@@ -7,7 +7,7 @@
 # http://www.gnu.org/licenses/licenses.html
 # http://www.gnu.org/licenses/gpl.html
 
-Version 0.5.2 - Feature Complete Beta
+Version 0.6.0 RC
 
 Introduction:
 	
@@ -23,11 +23,10 @@ Introduction:
 	exactly like t out of the box, with the added benefit that wherever you are in
 	a repository, you maintain a single bugs database in the root of the repository.
 	
-	But you can do more with b.  You can reopen issues - a feature starkly
-	lacking from t.  The edit, details, and comment commands allow you to track
-	additional information about the bugs, like stack traces and expected results,
-	and whatever other information you'd like.  The details file is a plain text
-	file, and can contain any content you desire.
+	But you can do more with b.  You can reopen issues, the edit, details, and
+	comment commands allow you to track	additional information about the bugs,
+	like stack traces and expected results, and whatever other information you'd
+	like.  The details file is a plain text file, and can contain any content you desire.
 	
 	You can also assign bugs to specific individuals - either based on their
 	commit names or not - and list lets you filter by owner to see what tasks
@@ -48,15 +47,19 @@ Introduction:
 	to provide resolution reasons, like fixed or duplicate - of course these could
 	all be done manually, but there is no such built in functionality.
 	
-	If you find many of those extra features to be unhelpful bloat when you're
-	trying to keep track of your smaller projects, and you don't care to waste
-	time organizing, categorizing, and sorting however, b is the tool to use!
+	If you need the power of something like Bugzilla, you're going to be frustrated
+	with b.  However if you find many of the extra "features" in these larger tools
+	to be unhelpful bloat, and you don't want to waste time organizing, categorizing,
+	and sorting and instead want a quick, easy way to track issues with your project
+	with minimal setup and configuration, then b is the tool to use!
 
 Some Suggested Use Cases:
 
 	A single developer, working on a small project, can turn that into a version
-	controlled project with a simple 'hg init', and with b installed, he (or she) also
+	controlled project with a simple 'hg init'.  With b installed, he (or she) also
 	gets a fully functional bug tracker to boot, no additional setup required!
+	As soon as you install b, every repository on your machine now has issue
+	tracking functionality ready to use.
 	
 	Working on a website, you could very easily (and I might do this myself 
 	soon enough) write a little PHP script which takes bug reports and logs 
@@ -77,7 +80,7 @@ Some Suggested Use Cases:
 	point where all the complexity and extra metadata is just wasted space and fluff.
 	That's not to say that b is necessarily a good alternative for a large company,
 	but it's worth asking yourself if you really benefit from all the extra tools;
-	many companies could get by just fine with the features b provides.
+	many organizations could get by just fine with the features b provides.
 
 Installing b:
 	
@@ -85,15 +88,20 @@ Installing b:
 	and add the following:
 	
 	[extensions]
-	bugs=/path/to/b.py
+	b=/path/to/b.py
 	
 	See the Mercurial wiki (http://mercurial.selenic.com/wiki/UsingExtensions)
-	for more details.
+	for more details on installing extensions.
+	
+	b is a zero-configuration tool - as soon as it is installed, every single
+	repository is ready to start tracking issues, without any additional setup.
+	You may find it helpful to specify a username for yourself in your ~/.hgrc
+	file, however this is absolutely not necessary to work with b.
 
 Config Options:
 	    
 	b has two configuration settings, both of which are optional, and should
-	be put in the [bugs] section of any config file.
+	be put in the [bugs] section of any Mercurial config file.
 	
 	user
 	    You can specify a user name for bug tracking, or 'hg.user' if you wish
@@ -140,8 +148,8 @@ Using b:
 	% hg b edit ID
 	will launch your default commit editor with a pre-populated set of sections you can
 	fill out.  Nothing is mandatory, and you can create or delete new sections as you'd
-	like.  It's suggested however that you leave the comments section at the bottom of the
-	file.
+	like.  Comments (see below) are appended to the end of the file, so it is suggested
+	you leave the comments section last.
 	
 	To view the details of a bug you call:
 	% hg b details ID
@@ -151,9 +159,8 @@ Using b:
 	
 	If you want to add a comment to a bug, like feedback or an update on its status,
 	% hg b comment ID 'COMMENT TEXT'
-	will append your comment to the details file (this is why you should leave the
-	comments section at the bottom of the details file when editing) along with the date
-	and, if set, your username (see below)
+	will append your comment to the details file along with the date and, if set,
+	your username (see below)
 	
 	To manage multi-user projects, you can set a bug username (see the Config Options
 	section above for how to do that) to associate with bugs, and say something like
@@ -177,28 +184,42 @@ Using b:
 	the '-r' flag will list resolved bugs, instead of open bugs.  The -o flag
 	takes a username (or a username prefix) and lists bugs owned by the specified
 	user.  The -g flag will list bugs which contain the specified text in their
-	title.  These flags can be used together for fairly granular browsing of
-	your bugs database.
+	title.  Issues are ordered by issue ID by default, however you can use the -a
+	flag to sort them alphabetically, and the -c flag to sort them chronologically.
+	These flags can be used together for fairly granular browsing of your bugs database.
+	
+	
+	The read-only commands (list, details, users, and id) have an additional --rev
+	option that can be used to run that command against a committed revision of the bug
+	database.  To see the list of issues open at the time of this release, for
+	instance, you could run 'hg b list --rev 6.0-rc'
 	
 FAQ:
 	How well does b scale?
-		b is still well in beta, and it has not been fully tested or benchmarked.
-		However test bug lists of more than 120,000 records have been constructed
-		and b has responded excellently, taking just a second or two to add
-		a record, and even less time to list bugs, filtering by owner or by grep.
-		Of course, you would have to work very hard to ever reach a bug list even
-		close to that number, and long before you get there you'll likely discover you
+		b has not been robustly benchmarked at this time, however test bug lists
+		of more than 120,000 records have been constructed and b has responded
+		excellently, taking just a second or two to add a record, and even less
+		time to list bugs, especially filtering by owner or by grep. Of course,
+		you would have to work very hard to ever reach a bug list even close
+		to that number, and long before you get there you'll likely discover you
 		need to switch to something more powerful, so for all intents and purposes
-		it'll handle everything you can throw at it.
+		b should handle everything you can throw at it.
 		
 	I would really like to be able to categorize my bugs, or detail how the bug
 	was resolved, why isn't that possible?
-		b is not trying to replace large scale, metadata driven bug trackers,
-		and if you find yourself wishing it had these sorts of features, you may
+		b is philosophically opposed to tracking this sort of data, and is not
+		trying to replace large scale, metadata driven bug trackers.
+		If you find yourself wishing it had these sorts of features, you may
 		very well be looking at the wrong product.  However, you could certainly
-		add such data to the beginning of the details file, and as long as you don't
-		intend to list or sort bugs by this information, it would really work 
-		no differently than storing it as metadata.
+		add such data to the details file, or add flags like P1 or BLOCKING to
+		issue titles if you felt the need to do so.  Users have reported finding
+		this workflow - combined with list's -g flag, fairly satisfactory.
+	
+	Can I use standard Mercurial commands inside the .bugs directory?
+		Absolutely.  Everything in the .bugs directory is a standard text file,
+		enabling easy merging, diffing, grepping, annotating, browsing, and data
+		mining.  If you feel so inclined, you can even edit any of the files in
+		the .bugs directory manually.
 	
 	Why doesn't b commit my changes?
 		b does not commit after bugs are filed or changed intentionally.  
@@ -207,11 +228,27 @@ FAQ:
 		user chooses so).  This allows the repository structure and the commit 
 		messages to remain concerned with the source code, and not have it fill
 		up with uninformative messages about every little thing you do with b.
+		It does however automatically add everything located in the bugs directory
+		so you shouldn't have to worry about ever leaving anything untracked.
+		Be careful that you don't accidentally check in .orig or .rej files that
+		Mercurial sometimes creates in the bugs directory, they would also be
+		added automatically.
 	
 	Is b ever going to work with other DVCS?
 		b was built to be as compartmentalized from the Mercurial API
-		calls as possible, and the hope is that yes, some day b will work
-		with any (distributed) tracker.
+		calls as possible, and while there are no plans at present to
+		expand b to work with other DVCS, the structure to do so exists.
+	
+	Does b work with unicode or other encodings beyond ASCII?
+		There is an open bug (bug 286b) to improve b's handling of
+		non-ASCII character sets, however at present you may run into trouble
+		tracking issues in other languages or encodings.  Ensuring that
+		issues created and updated in arbitrary encodings continue to be
+		editable and viewable on machines with other encodings is a
+		non-trivial task, and likely cannot be fully resolved until
+		a future release of Mercurial provides more robust encoding
+		transformation utilities.  Patches to improve this issue are
+		very welcome.
 		
 	Can I use b in a corporate environment?
 		b is released under GPL2+ so yes, you may.  However you may
@@ -221,10 +258,10 @@ FAQ:
 		and you are welcome to contact me with questions.
 	
 	I have an idea for a feature, or a bug to report, what should I do?
-		b is released as open source software, so experiment, make it
-		yourself if you feel so inclined.  You're also welcome to email me
-		with suggestions, questions or code changes.  Or even pull the
-		repository, file a bug there, and serve it up somewhere for me
-		to pull it back!  How's that for dogfooding?
+		b is released as open source software, so experiment, make or
+		fix it yourself if you feel so inclined.  You're also welcome
+		to email me with suggestions, questions or code changes.  Or
+		even pull the repository, file a bug there, and serve it up
+		somewhere for me to pull it back!  How's that for dogfooding?
 		
 I hope you find b useful!
