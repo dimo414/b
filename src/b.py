@@ -35,7 +35,7 @@ See the README file for more details on what you can, and can't, do with b.
 #
 # Imports
 #
-import os, errno, re, hashlib, sys, subprocess, time
+import os, errno, re, hashlib, sys, subprocess, tempfile, time
 from operator import itemgetter
 from datetime import datetime
 from mercurial.i18n import _
@@ -549,7 +549,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     rename prefix text
         Renames The bug denoted by prefix to text.   You can use sed-style substitution strings if so desired.
         
-    users
+    users [--rev rev]
         Displays a list of all users, and the number of open bugs assigned to each of them
         
     assign prefix username [-f]
@@ -561,7 +561,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
         Use 'me' to assign the bug to the current user,
         and 'Nobody' to remove its assignment.
         
-    details prefix
+    details [--rev rev] prefix
         Prints the extended details of the specified bug
         
     edit prefix
@@ -577,7 +577,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     reopen prefix
         Marks the specified bug as open
         
-    list [-r] [-o owner] [-g search]
+    list [--rev rev] [-r] [-o owner] [-g search]
         Lists all bugs, with the following filters:
         
             -r list resolved bugs.
@@ -590,7 +590,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             
             -c list bugs chronologically
         
-    id prefix
+    id [--rev rev] prefix
         Takes a prefix and returns the full id of that bug
     
     version
@@ -602,7 +602,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     if len(args) > 0:
         id = args[0]
     if len(args) > 1:
-        subtext = (' '.join(args[1:])).strip();
+        subtext = (' '.join(args[1:])).strip()
     
     try:
         bugsdir = ui.config("bugs","dir",".bugs")
@@ -611,8 +611,36 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             user = ui.username()
         path = repo.root
         os.chdir(path)
-        bd = BugsDict(bugsdir,user)
 
+        # handle other revisions
+        ## The methodology here is to use or create a directory
+        ## in the user's /tmp directory for the given revision
+        ## and store whatever files are being accessed there,
+        ## then simply set path to the temporary repodir
+        if opts['rev']:
+            # TODO error on non-readonly command
+            rev = str(repo[opts['rev']])
+            tempdir = tempfile.gettempdir()
+            revpath = os.path.join(tempdir,'b-'+rev)
+            _mkdir_p(os.path.join(revpath,bugsdir))
+            if not os.path.exists(os.path.join(revpath,bugsdir,'bugs')):
+                commands.cat(ui,repo,os.path.join(bugsdir,'bugs'),rev=rev,output=os.path.join(revpath,bugsdir,'bugs'))
+            os.chdir(revpath)
+
+        bd = BugsDict(bugsdir,user)
+        
+        if opts['rev'] and 'details'.startswith(cmd):
+            # if it's a details command, try to get the details file
+            # if the lookup fails, we don't need to worry about it, the
+            # standard error handling will catch it and warn the user
+            fullid = bd.id(id)
+            detfile = os.path.join(bugsdir,'details',fullid+'.txt')
+            if not os.path.exists(os.path.join(revpath,detfile)):
+                _mkdir_p(os.path.join(revpath,bugsdir,'details'))
+                os.chdir(path)
+                commands.cat(ui,repo,detfile,rev=rev,output=os.path.join(revpath,detfile))
+                os.chdir(revpath)
+                
         def _add():
             ui.write(bd.add(text) + '\n')
             bd.write()
@@ -685,7 +713,8 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             raise UnknownCommand(cmd)
         
         # Add all new files to Mercurial - does not commit
-        _track(bugsdir,ui,repo)
+        if not opts['rev']:
+            _track(bugsdir,ui,repo)
     
     except InvalidDetailsFile, e:
         ui.warn(_("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?\n"))
@@ -717,6 +746,7 @@ cmdtable = {"b|bug|bugs": (cmd,[
                                 ('o', 'owner', '*', _('Specify an owner to list by')),
                                 ('g', 'grep', '', _('Filter titles by STRING')),
                                 ('a', 'alpha', False, _('Sort list alphabetically')),
-                                ('c', 'chrono', False, _('Sort list chronologically'))
+                                ('c', 'chrono', False, _('Sort list chronologically')),
+                                ('', 'rev', '', _('Run a read-only command against a different revision'))
                            ]
                            ,_("cmd [args]"))}
