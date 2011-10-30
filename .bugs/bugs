@@ -3,7 +3,7 @@ list command reports no such file when bugs dir doesn't exist | owner:Michael, o
 Need to add bug files automatically                          | owner:Michael, open:False, id:27e00056bfc988ab41c023b5c0a9db9f5e9fa527, time:1277581398.52
 missing unicode support                                      | owner:ArneBab, open:True, id:286b661789a9b4ae60ffd0754888cf43563ce668, time:1306670417.88
 add version command to report what version of b we're using  | owner:Michael, open:False, id:4982d102b75bda27e54c16293350ff561c248921, time:1278106694.44
-Ability to run read-only command from a specified revision -R | owner:Michael, open:True, id:6345fce4a284b182a376e1affa02eb774436689f, time:1319037514.92
+Ability to run read-only command from a specified revision -R | owner:Michael, open:False, id:6345fce4a284b182a376e1affa02eb774436689f, time:1319037514.92
 Files should be added to mercurial at the end, not the begining of the call | owner:Michael, open:False, id:6ba1ae74c48a6fd84c5d0698fa8169a28e88b343, time:1277680246.97
 hg b help should exist, and point to hg help b               | owner:Michael, open:False, id:7e79f51975af54656f9afdf6958df40c812b5278, time:1319064278.86
 Use consistent EOL markers and set up a .hgeol file          | owner:Michael, open:False, id:884b4c3360aa89bbd841013a6cf34bc904dcc3b5, time:1313353463.53

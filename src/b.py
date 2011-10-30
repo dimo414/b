@@ -96,6 +96,11 @@ class UnknownCommand(Exception):
         super(UnknownCommand, self).__init__()
         self.cmd = cmd
 
+class NonReadOnlyCommand(Exception):
+    """Raised when user tries to run a destructive command against a read only issue db."""
+    def __init__(self, cmd):
+        super(NonReadOnlyCommand, self).__init__()
+        self.cmd = cmd
 #       
 # Helper Methods - often straight from t
 #
@@ -690,6 +695,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
         def _version():
             ui.write(version + '\n')
 
+        readonly_cmds = set(['users','details','list','id'])
         cmds = {
                 'add': _add,
                 'rename': _rename,
@@ -709,13 +715,18 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
         candidates = [c for c in cmds if c.startswith(cmd)]
         real_candidate = [c for c in candidates if c == cmd]
         if real_candidate:
-            cmds[cmd]()
+            pass # already valid command
         elif len(candidates) > 1:
             raise AmbiguousCommand(candidates)
         elif len(candidates) == 1:
-            cmds[candidates[0]]()
+            cmd = candidates[0]
         else:
             raise UnknownCommand(cmd)
+        
+        # ensure only read only commands can handle revision selection
+        if opts['rev'] and cmd not in readonly_cmds:
+            raise NonReadOnlyCommand(cmd)
+        cmds[cmd]()
         
         # Add all new files to Mercurial - does not commit
         if not opts['rev']:
@@ -742,7 +753,9 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     except UnknownCommand, e:
         ui.warn(_("No such command '%s'\n") % e.cmd)
     except AmbiguousCommand, e:
-        ui.warn(_("Command ambiguous between: %s\n" % (', '.join(e.cmd))))
+        ui.warn(_("Command ambiguous between: %s\n") % (', '.join(e.cmd)))
+    except NonReadOnlyCommand, e:
+        ui.warn(_("'%s' is not a read-only command - cannot run against a past revision\n") % e.cmd)
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
 cmdtable = {"b|bug|bugs": (cmd,[

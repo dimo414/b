@@ -24,3 +24,8 @@ Commands are: users, details, list, id
 
 [comments]
 # Comments and updates - leave your name
+
+
+By: Michael
+On: Sunday, October 30 2011 01:39AM
+Implemented revision selection by running 'hg cat -r X' on the necessary files in the .bugs directory and exporting them to a temporary directory.  The extension is then pointed to that temporary directory as the bugs db, and commands are run as normal.  Only the read-only commands specified above can be run against old revisions. 
