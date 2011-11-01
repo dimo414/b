@@ -1,6 +1,6 @@
 # b.py - Distributed Bug Tracker Extention for Mercurial
 #
-# Copyright 2010 Michael Diamond <michael@digitalgemstones.com>
+# Copyright 2010-2011 Michael Diamond <michael@digitalgemstones.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -44,7 +44,7 @@ from mercurial import hg,commands
 #
 # Version
 #
-version = _("b Version 0.6.0 Release Candidate - built 11-1-11")
+version = _("b Version 0.6.0 Release Candidate 2 - built 11-1-11")
 
 #
 # Exceptions

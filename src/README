@@ -1,13 +1,13 @@
 # README - Documentation for b, a distributed bug tracker extension for Mercurial
 #
-# Copyright 2010 Michael Diamond <michael@digitalgemstones.com>
+# Copyright 2010-2011 Michael Diamond <michael@digitalgemstones.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 # http://www.gnu.org/licenses/licenses.html
 # http://www.gnu.org/licenses/gpl.html
 
-Version 0.6.0 RC
+Version 0.6.0 RC 2
 
 Introduction:
 	
@@ -111,7 +111,7 @@ Config Options:
 	
 	dir
 	    Allows you to specify (relative to the repo root) where the bugs
-	    database should go.  The default is 'REPOROOT/.bugs'
+	    database should go.  The default is '.bugs'
 	    
 Using b:
 	
@@ -176,8 +176,8 @@ Using b:
 	assign the bug to your username, and the special name 'Nobody' will mark the bug
 	as unassigned.
 	
-	To see a list of all users, and the number of open bugs assigned to them,
-	you can call:
+	To see a list of all users b is currently aware of, and the number of open
+	bugs assigned to them, you can call:
 	% hg b users
 	
 	Finally, list has some advanced functionality that's worth knowing.  First
@@ -187,12 +187,14 @@ Using b:
 	title.  Issues are ordered by issue ID by default, however you can use the -a
 	flag to sort them alphabetically, and the -c flag to sort them chronologically.
 	These flags can be used together for fairly granular browsing of your bugs database.
+	In addition, you can use the -T flag to truncate output that would otherwise
+	overflow beyond one line.
 	
 	
 	The read-only commands (list, details, users, and id) have an additional --rev
 	option that can be used to run that command against a committed revision of the bug
 	database.  To see the list of issues open at the time of this release, for
-	instance, you could run 'hg b list --rev 6.0-rc'
+	instance, you could run 'hg b list --rev 6.0-rc-2'
 	
 FAQ:
 	How well does b scale?
