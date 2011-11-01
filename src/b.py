@@ -57,7 +57,9 @@ class InvalidDetailsFile(Exception):
 
 class InvalidTaskfile(Exception):
     """Raised when the path to a task file already exists as a directory."""
-    pass
+    def __init__(self, reason=''):
+        super(InvalidTaskfile, self).__init__()
+        self.reason = reason
 
 class AmbiguousPrefix(Exception):
     """Raised when trying to use a prefix that could identify multiple tasks."""
@@ -83,6 +85,13 @@ class UnknownUser(Exception):
     def __init__(self, user):
         super(UnknownUser, self).__init__()
         self.user = user
+
+class InvalidInput(Exception):
+    """Raised when the input to a command is somehow invalid - for example,
+    a username with a | character will cause problems parsing the bugs file."""
+    def __init__(self, reason):
+        super(InvalidInput, self).__init__()
+        self.reason = reason
 
 class AmbiguousCommand(Exception):
     """Raised when trying to run a command by prefix that matches more than one command."""
@@ -152,16 +161,20 @@ def _task_from_taskline(taskline):
     and other metadata will be generated when the line is read.  This is
     supported to enable editing of the taskfile with a simple text editor.
     """
-    if '|' in taskline:
-        text, _, meta = taskline.partition('|')
-        task = { 'text': text.strip() }
-        for piece in meta.strip().split(','):
-            label, data = piece.split(':')
-            task[label.strip()] = data.strip()
-    else:
-        text = taskline.strip()
-        task = { 'id': _hash(text), 'text': text, 'owner': '', 'open': 'True', 'time': time.time() }
-    return task
+    try:
+        if '|' in taskline:
+            text, meta = taskline.rsplit('|',1)
+            task = { 'text': text.strip() }
+            for piece in meta.strip().split(','):
+                label, data = piece.split(':',1)
+                task[label.strip()] = data.strip()
+        else:
+            text = taskline.strip()
+            task = { 'id': _hash(text), 'text': text, 'owner': '', 'open': 'True', 'time': time.time() }
+        return task
+    except Exception:
+        raise InvalidTaskfile(_("perhaps a missplaced '|'?\n"
+                                "Line is: %s") % taskline)
 
 def _tasklines_from_tasks(tasks):
     """Parse a list of tasks into tasklines suitable for writing to a file."""
@@ -255,7 +268,7 @@ class BugsDict(object):
         "[comments]\n# Comments and updates - leave your name\n")
         path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
         if os.path.isdir(path):
-            raise InvalidTaskfile
+            raise InvalidTaskfile(_("The path where the bugs database should be is blocked and cannot be created."))
         if os.path.exists(path):
             tfile = open(path, 'r')
             tlns = tfile.readlines()
@@ -270,7 +283,7 @@ class BugsDict(object):
         _mkdir_p(self.bugsdir)
         path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
         if os.path.isdir(path):
-            raise InvalidTaskfile
+            raise InvalidTaskfile(_("The path where the bugs database should be is blocked and cannot be created."))
         tasks = sorted(self.bugs.values(), key=itemgetter('id'))
         tfile = open(path, 'w')
         for taskline in _tasklines_from_tasks(tasks):
@@ -366,6 +379,9 @@ class BugsDict(object):
                 user = matched[0]
             if user == 'Nobody': # needed twice, since users can also type a prefix to get it
                 return ''
+        else: # we're forcing a new username
+            if '|' in user:
+                raise InvalidInput(_("Usernames cannot contain '|'."))
         return user
             
     
@@ -735,7 +751,9 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     except InvalidDetailsFile, e:
         ui.warn(_("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?\n"))
     except InvalidTaskfile, e:
-        ui.warn(_("The path where the bugs database should be is blocked and cannot be created.  This could be caused by a manually created directory.\n"))
+        ui.warn(_("Invalid bugs database: %s\n") % e.reason)
+    except InvalidInput, e:
+        ui.warn(_("Invalid input: %s\n") % e.reason)
     except AmbiguousPrefix, e:
         if (id == ''):
             ui.warn(_("You need to provide an issue prefix.  Run list to get a unique prefix for the bug you are looking for.\n"))
