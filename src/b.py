@@ -476,6 +476,8 @@ class BugsDict(object):
             text = _('No Details File Found.')
         
         header = _("Title: %s\nID: %s\n") % (task['text'],task['id'])
+        if not task['open']:
+            header = header + _("*Resolved* ")
         if task['owner'] != '':
             header = header + (_("Owned By: %s\n") % task['owner'])
         header = header + (_("Filed On: %s\n\n") % _datetime(task['time']))
@@ -521,7 +523,7 @@ class BugsDict(object):
         task = self[prefix]
         task['open'] = 'True'
     
-    def list(self,open=True,owner='*',grep='',alpha=False,chrono=False):
+    def list(self,open=True,owner='*',grep='',alpha=False,chrono=False,truncate=0):
         """Lists all bugs, applying the given filters"""
         tasks = dict(self.bugs.items())
         
@@ -544,7 +546,10 @@ class BugsDict(object):
         if chrono:
             small = sorted(small, key=itemgetter('time'))
         for task in small:
-            out += _('%s - %s\n') % (task['prefix'].ljust(plen),task['text'])
+            line = _('%s - %s') % (task['prefix'].ljust(plen),task['text'])
+            if truncate > 0 and len(line) > truncate:
+                line = line[:truncate-4]+'...'
+            out += line+'\n'
         return out + _describe_print(len(small),open,owner,grep)
 #
 # Mercurial Extention Operations
@@ -700,7 +705,8 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             bd.write()
 
         def _list():
-            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep'], opts['alpha'], opts['chrono']) + '\n')
+            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep'],
+                             opts['alpha'], opts['chrono'], ui.termwidth() if opts['truncate'] else 0) + '\n')
 
         def _id():
             ui.write(bd.id(id) + '\n')
@@ -783,6 +789,7 @@ cmdtable = {"b|bug|bugs": (cmd,[
                                 ('g', 'grep', '', _('Filter titles by STRING')),
                                 ('a', 'alpha', False, _('Sort list alphabetically')),
                                 ('c', 'chrono', False, _('Sort list chronologically')),
+                                ('T', 'truncate', False, _('Truncate list output to fit window')),
                                 ('', 'rev', '', _('Run a read-only command against a different revision'))
                            ]
                            ,_("cmd [args]"))}
