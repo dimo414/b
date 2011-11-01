@@ -476,7 +476,7 @@ class BugsDict(object):
             text = _('No Details File Found.')
         
         header = _("Title: %s\nID: %s\n") % (task['text'],task['id'])
-        if not task['open']:
+        if not _truth(task['open']):
             header = header + _("*Resolved* ")
         if task['owner'] != '':
             header = header + (_("Owned By: %s\n") % task['owner'])
