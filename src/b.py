@@ -664,7 +664,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             if not os.path.exists(os.path.join(revpath,detfile)):
                 _mkdir_p(os.path.join(revpath,bugsdir,'details'))
                 os.chdir(path)
-                _cat(detfile,revpath,rev,ui,repo)
+                _cat(ui,repo,detfile,revpath,rev)
                 os.chdir(revpath)
         
         def _add():
