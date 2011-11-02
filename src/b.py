@@ -47,6 +47,13 @@ from mercurial import hg,commands
 version = _("b Version 0.6.0 Release Candidate 2 - built 11-1-11")
 
 #
+# Static values / config settings
+#
+"""By default, IDs are made from title, time, and username when availible.
+When true, only the title is used to make IDs."""
+_simple_hash = False
+
+#
 # Exceptions
 #
 class InvalidDetailsFile(Exception):
@@ -170,7 +177,8 @@ def _task_from_taskline(taskline):
                 task[label.strip()] = data.strip()
         else:
             text = taskline.strip()
-            task = { 'id': _hash(text+str(time.time())), 'text': text, 'owner': '', 'open': 'True', 'time': time.time() }
+            global _simple_hash
+            task = { 'id': _hash(text) if _simple_hash else _hash(text+str(time.time())), 'text': text, 'owner': '', 'open': 'True', 'time': time.time() }
         return task
     except Exception:
         raise InvalidTaskfile(_("perhaps a missplaced '|'?\n"
@@ -391,7 +399,8 @@ class BugsDict(object):
     
     def add(self, text):
         """Adds a bug with no owner to the task list"""
-        task_id = _hash(text+self.user+str(time.time()))
+        global _simple_hash
+        task_id = _hash(text) if _simple_hash else _hash(text+self.user+str(time.time()))
         self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': self.user, 'text': text, 'time': time.time()}
         return _("Added bug %s...") % task_id[:10]
     
