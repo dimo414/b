@@ -170,7 +170,7 @@ def _task_from_taskline(taskline):
                 task[label.strip()] = data.strip()
         else:
             text = taskline.strip()
-            task = { 'id': _hash(text), 'text': text, 'owner': '', 'open': 'True', 'time': time.time() }
+            task = { 'id': _hash(text+str(time.time())), 'text': text, 'owner': '', 'open': 'True', 'time': time.time() }
         return task
     except Exception:
         raise InvalidTaskfile(_("perhaps a missplaced '|'?\n"
@@ -272,7 +272,7 @@ class BugsDict(object):
         if os.path.exists(path):
             tfile = open(path, 'r')
             tlns = tfile.readlines()
-            tls = [tl.strip() for tl in tlns if tl]
+            tls = [tl.strip() for tl in tlns if tl.strip()]
             tasks = map(_task_from_taskline, tls)
             for task in tasks:
                 self.bugs[task['id']] = task
@@ -391,12 +391,7 @@ class BugsDict(object):
     
     def add(self, text):
         """Adds a bug with no owner to the task list"""
-        task_id = ''
-        while True:
-            # ensures the id is unique, even if the bug title is the same as another
-            task_id = _hash(text+task_id)
-            if not task_id in self.bugs:
-                break
+        task_id = _hash(text+self.user+str(time.time()))
         self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': self.user, 'text': text, 'time': time.time()}
         return _("Added bug %s...") % task_id[:10]
     
