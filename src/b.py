@@ -555,11 +555,10 @@ class BugsDict(object):
                 line = line[:truncate-4]+'...'
             out += line+'\n'
         return out + _describe_print(len(small),open,owner,grep)
+    
 #
 # Mercurial Extention Operations
 # These are used to allow the tool to work as a Hg Extention
-#
-# cmd name        function call
 #
 def _track(ui,repo,dir):
     """ Adds new files to Mercurial. """
@@ -572,7 +571,10 @@ def _cat(ui,repo,file,todir,rev=None):
     ui.pushbuffer()
     commands.cat(ui,repo,file,rev=rev,output=os.path.join(todir,file))
     ui.popbuffer()
-    
+
+#
+# Command line processing
+#
 def cmd(ui,repo,cmd = 'list',*args,**opts):
     """ Distributed Bug Tracker For Mercurial
     
