@@ -21,7 +21,7 @@ but is provided as a convenience to prevent regressions.  Tests should
 always be run before pushing.
 """
 
-import os, shutil, sys, tempfile, unittest
+import os, re, shutil, sys, tempfile, unittest
 # adds everything in the same directory to pythonpath regardless of how the module is run
 sys.path.append(os.path.dirname(__file__))
 import b
@@ -46,11 +46,15 @@ class Test(unittest.TestCase):
             shutil.rmtree(self.dir)
     
     def conclude(self):
-        """Use at the end of tests to ensure data is being written to bugs dict successfully"""
-        list = self.bd.list()
+        """Use at the end of tests to ensure data is being written to bugs dict successfully.
+        
+        Any operation that precedes a call to bd.write() in b's cmd function must be tested
+        with this function.  Despite the name, it is safe to call at any point during a test,
+        no data should be lost."""
+        list = self.bd.list(alpha=True)
         self.bd.write()
         self.bd = b.BugsDict()
-        self.assertEqual(list, self.bd.list())
+        self.assertEqual(list, self.bd.list(alpha=True))
         
     def test_helpers(self):
         """Tests the helper methods"""
@@ -143,24 +147,79 @@ class Test(unittest.TestCase):
         self.assertEqual(self.bd._get_user('us'),'User')
         
     def test_id(self):
-        pass
+        """Straightforward test, ensures ID function works"""
+        self.bd.add("test")
+        self.assertEqual(self.bd.id('a'),'a94a8fe5ccb19ba61c4c0873d391e987982fbbd3')
     
     def test_add(self):
-        pass
+        """Basic add functionality tested everywhere, edge cases here"""
+        self.bd.add('test|with"bars,and\'other\tpotentially#bad{characters}')
+        self.assertEqual(self.bd.list(), 'd - test|with"bars,and\'other\t'
+                         'potentially#bad{characters}\nFound 1 open bug')
+        self.conclude()
     
     def test_rename(self):
-        pass
+        """Tests total rename and sed-style rename"""
+        self.bd.add('test')
+        self.bd.rename('a','give the knife')
+        self.assertEqual(self.bd.list(),'a - give the knife\nFound 1 open bug')
+        self.conclude() # write to file, reload
+        self.bd.rename('a', '/g|kn/l/')
+        self.assertEqual(self.bd.list(),'a - live the life\nFound 1 open bug')
+        self.conclude()
     
     def test_users(self):
-        pass
+        """Tests output of users command"""
+        self.bd.add('unassigned')
+        self.bd.user = 'User'
+        self.bd.add('test')
+        self.bd.add('another test')
+        self.bd.add('resolved test')
+        self.bd.resolve('8')
+        self.bd.user = 'A User'
+        self.bd.add('different test')
+        self.assertEqual(self.bd.users(), 'Username: Open Bugs\nNobody: 1\nA User: 1\nUser:   2\n')
     
     def test_assign(self):
-        pass
+        """Tests user assignment and forcing of user creation"""
+        self.bd.user = 'User'
+        self.bd.add('test')
+        self.bd.user = 'A User'
+        self.bd.add('a test')
+        self.bd.add('a new test')
+        self.assertEqual(self.bd.users(),'Username: Open Bugs\nA User: 2\nUser:   1\n')
+        self.bd.assign('9','u')
+        self.conclude()
+        self.assertEqual(self.bd.users(),'Username: Open Bugs\nA User: 1\nUser:   2\n')
+        self.assertRaises(b.UnknownUser, self.bd.assign,'9','Newbie')
+        self.bd.assign('9', 'Uther', True)
+        self.assertEqual(self.bd.users(),'Username: Open Bugs\nA User: 1\nUther:  1\nUser:   1\n')
+        self.assertRaises(b.AmbiguousUser, self.bd.assign, '9', 'u')
+        
+        self.conclude()
     
     def test_details(self):
-        pass
+        """Tests outputting of issue details with and without a details file"""
+        self.bd.add('new test')
+        self.assertTrue(re.match('Title: new test\nID: ce91fd20f393d261ea86e97fa26c273d02d43b4b\n'
+                                 'Filed On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M'
+                                 '\n\nNo Details File Found.',
+                        self.bd.details('c')))
+        self.bd.assign('c', 'User', True)
+        self.bd.resolve('c')
+        self.bd.user = 'Another User'
+        self.bd.comment('c','Resolved an issue.\nHow nice!')
+        self.assertTrue(re.match('Title: new test\nID: ce91fd20f393d261ea86e97fa26c273d02d43b4b\n'
+                                 '\*Resolved\* Owned By: User\n'
+                                 'Filed On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\n\n'
+                                 '\[comments\]\n\n\nBy: Another User\n'
+                                 'On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\nResolved an issue.\n'
+                                 'How nice!',
+                        self.bd.details('c')))
+        
     
     def test_edit(self):
+        """Edit does little more than launch an external editor.  Little to test."""
         pass
     
     def test_comment(self):
@@ -194,18 +253,38 @@ class Test(unittest.TestCase):
         pass
     
     def test_speed(self):
-        for i in range(1,10):
-            self.bd.add(str(i))
+        """Tests the speed of generating and listing a large BD.
         
-        self.conclude()
+        If this fails, confirm that the most recent tagged release does not also fail,
+        and then try to identify what expensive changes have been made between then
+        and now.  If the most recent tagged release does not fail this test, no changes
+        may be permitted to cause this test to fail.
+        """
+        timelimit = 4   # seconds to allow to run
+        numbugs = 10000 # number of bugs to create before testing - increase this when possible
+        for i in range(0,numbugs):
+            self.bd.add(str(i))
+            
+        import timeit
+        t = timeit.Timer(self.conclude)
+        time = t.timeit(1)
+        msg = "Accessing a large list took %.3f seconds - not allowed to exceed %s seconds." % (time,timelimit)
+        self.assertTrue(time <= timelimit, msg)
         
         self.bd.list()
 
 def hook(ui, repo, *args, **opts):
     if ui.promptchoice("Would you like to run unit tests before committing? (y/n):",['&No','&Yes']):
         suite = unittest.TestLoader().loadTestsFromTestCase(Test)
-        unittest.TextTestRunner().run(suite)
+        result = unittest.TextTestRunner().run(suite)
+        return len(result.errors)+len(result.failures)
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.test_list_empty']
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1].lower() == 'help':
+        print("Run unit tests against b.py.  No arguments runs all tests, or you can pass the suffix of "
+              "one or more test methods from this file, such as helpers, add, or assign - see the "
+              "source for all possible tests.")
+        sys.exit()
+    sys.argv = sys.argv[0:1] + ['Test.test_'+n for n in sys.argv[1:]]
     unittest.main()
