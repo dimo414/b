@@ -215,21 +215,36 @@ class Test(unittest.TestCase):
                                  '\[comments\]\n\n\nBy: Another User\n'
                                  'On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\nResolved an issue.\n'
                                  'How nice!',
-                        self.bd.details('c')))
+                                 self.bd.details('c')))
+                        
         
     
     def test_edit(self):
-        """Edit does little more than launch an external editor.  Little to test."""
+        """Edit does little more than launch an external editor.  Nothing to easily test for now."""
         pass
     
     def test_comment(self):
-        pass
+        """Confirms comment functionality works"""
+        self.bd.add('test')
+        self.bd.comment('a', 'This is a comment')
+        self.assertTrue(re.match('Title: test\nID: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3'
+                        '\nFiled On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\n\n\[comments\]\n\n\n'
+                        'On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\nThis is a comment',
+                        self.bd.details('a')))
     
     def test_resolve(self):
-        pass
-    
-    def test_reopen(self):
-        pass
+        """Tests both resolve and reopen"""
+        self.bd.add('test')
+        self.bd.add('another test')
+        self.assertEqual(self.bd.list(), 'af - another test\na9 - test\nFound 2 open bugs')
+        self.bd.resolve('af')
+        self.assertEqual(self.bd.list(), 'a9 - test\nFound 1 open bug')
+        self.assertEqual(self.bd.list(False), 'af - another test\nFound 1 resolved bug')
+        self.conclude()
+        self.bd.reopen('af')
+        self.bd.resolve('a9')
+        self.assertEqual(self.bd.list(), 'af - another test\nFound 1 open bug')
+        self.assertEqual(self.bd.list(False), 'a9 - test\nFound 1 resolved bug')
         
     def test_list(self):
         """Tests that the BD doesn't fail when calling list before the BD has done any work"""
@@ -247,13 +262,37 @@ class Test(unittest.TestCase):
         # ordered by creation time
         self.assertEqual(self.bd.list(chrono=True),"a - EFGH\nf - ABCD\n6 - IJKL\nFound 3 open bugs")
         
+        # TODO truncate
+        # how should we test truncate in a platform independent fashion?
+        
         self.conclude()
     
     def test_list_filters(self):
-        pass
-    
+        """Tests list's filter functionality.
+          Filter by owner and by grep - resolution is tested in test_resolve
+        """
+        self.bd.add('ABCD')
+        self.bd.assign('fb','Someone',True)
+        self.bd.add('DEFG')
+        self.bd.user = 'User'
+        self.bd.add('GHIJ')
+        self.bd.add('JKLM')
+        self.assertEqual(self.bd.list(owner='me'),'f1 - GHIJ\n4  - JKLM\nFound 2 open bugs owned by User')
+        self.assertEqual(self.bd.list(owner='no'),'b - DEFG\nFound 1 open bug owned by Nobody')
+        self.assertEqual(self.bd.list(owner='some'),'fb - ABCD\nFound 1 open bug owned by Someone')
+        self.assertEqual(self.bd.list(grep='D'),'fb - ABCD\nb  - DEFG\nFound 2 open bugs whose title contains D')
+        self.assertEqual(self.bd.list(grep='h'),'f1 - GHIJ\nFound 1 open bug whose title contains h')
+        self.assertEqual(self.bd.list(owner='u',grep='j'),'f1 - GHIJ\n4  - JKLM\nFound 2 open bugs owned by User whose title contains j')
+            
     def test_speed(self):
         """Tests the speed of generating and listing a large BD.
+        
+        Operations being timed:
+          List sorted
+          Write file
+          Read file
+          List sorted
+          Compare lists to confirm equality
         
         If this fails, confirm that the most recent tagged release does not also fail,
         and then try to identify what expensive changes have been made between then
@@ -263,7 +302,7 @@ class Test(unittest.TestCase):
         timelimit = 4   # seconds to allow to run
         numbugs = 10000 # number of bugs to create before testing - increase this when possible
         for i in range(0,numbugs):
-            self.bd.add(str(i))
+            self.bd.add('This is bug %s - be nice to it' % str(i))
             
         import timeit
         t = timeit.Timer(self.conclude)

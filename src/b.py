@@ -44,7 +44,7 @@ from mercurial import hg,commands
 #
 # Version
 #
-version = _("b Version 0.6.0 Release Candidate 2 - built 11-1-11")
+version = _("b Version 0.6.0 Release Candidate 2 - built 11-4-11")
 
 #
 # Static values / config settings
@@ -538,10 +538,11 @@ class BugsDict(object):
         if owner != '*':
             owner = self._get_user(owner)
         
-        small = [task for task in tasks.values() if _truth(task['open']) == open and (owner == '*' or owner == task['owner']) and grep.lower() in task['text'].lower()]
+        small = [task for task in tasks.values() if _truth(task['open']) == open and 
+                                                     (owner == '*' or owner == task['owner']) and 
+                                                     (grep == '' or grep.lower() in task['text'].lower())]
         if len(small) > 0:
-            prefs = [len(task['prefix']) for task in small]
-            plen = max(prefs)
+            plen = max([len(task['prefix']) for task in small])
         else:
             plen = 0
         out = ''
