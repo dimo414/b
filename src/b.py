@@ -44,7 +44,7 @@ from mercurial import hg,commands
 #
 # Version
 #
-version = _("b Version 0.6.0 Release Candidate 2 - built 11-4-11")
+version = _("b Version 0.6.0 - built 11-7-11")
 
 #
 # Static values / config settings

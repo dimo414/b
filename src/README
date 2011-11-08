@@ -7,7 +7,7 @@
 # http://www.gnu.org/licenses/licenses.html
 # http://www.gnu.org/licenses/gpl.html
 
-Version 0.6.0 RC 2
+Version 0.6.0
 
 Introduction:
 	
@@ -29,8 +29,8 @@ Introduction:
 	like.  The details file is a plain text file, and can contain any content you desire.
 	
 	You can also assign bugs to specific individuals - either based on their
-	commit names or not - and list lets you filter by owner to see what tasks
-	are in your care.
+	Mercurial commit names or not - and list lets you filter by owner to see what
+	tasks are in your care.
 	
 	b is powerful enough to support several different workflow complexities,
 	from an individual just tracking tasks in a repository, all the way up to a
@@ -47,11 +47,11 @@ Introduction:
 	to provide resolution reasons, like fixed or duplicate - of course these could
 	all be done manually, but there is no such built in functionality.
 	
-	If you need the power of something like Bugzilla, you're going to be frustrated
-	with b.  However if you find many of the extra "features" in these larger tools
-	to be unhelpful bloat, and you don't want to waste time organizing, categorizing,
-	and sorting and instead want a quick, easy way to track issues with your project
-	with minimal setup and configuration, then b is the tool to use!
+	If you need the power of something like Bugzilla, you're going to find b
+	limited.  However if you find many of the extra "features" in these larger
+	tools to be unhelpful bloat, and you don't want to waste time organizing,
+	categorizing, and sorting and instead want a quick, easy way to track issues
+	with your project with minimal setup and configuration, then b is the tool to use!
 
 Some Suggested Use Cases:
 
@@ -62,8 +62,8 @@ Some Suggested Use Cases:
 	tracking functionality ready to use.
 	
 	Working on a website, you could very easily (and I might do this myself 
-	soon enough) write a little PHP script which takes bug reports and logs 
-	them to b.  I often find the closer to my workflow a tool is
+	soon enough) write a little PHP script which takes bug reports and
+	logs them to b.  I often find the closer to my workflow a tool is
 	the easier it is to use, so integrating it right into the website
 	makes a lot of sense.
 	
@@ -184,11 +184,10 @@ Using b:
 	the '-r' flag will list resolved bugs, instead of open bugs.  The -o flag
 	takes a username (or a username prefix) and lists bugs owned by the specified
 	user.  The -g flag will list bugs which contain the specified text in their
-	title.  Issues are ordered by issue ID by default, however you can use the -a
-	flag to sort them alphabetically, and the -c flag to sort them chronologically.
-	These flags can be used together for fairly granular browsing of your bugs database.
-	In addition, you can use the -T flag to truncate output that would otherwise
-	overflow beyond one line.
+	title.  You can use the -a flag to sort issues alphabetically, and the -c
+	flag to sort them chronologically.  These flags can be used together for
+	fairly granular browsing of your bugs database.  In addition, you can use
+	the -T flag to truncate output that would otherwise overflow beyond one line.
 	
 	
 	The read-only commands (list, details, users, and id) have an additional --rev
@@ -198,14 +197,14 @@ Using b:
 	
 FAQ:
 	How well does b scale?
-		b has not been robustly benchmarked at this time, however test bug lists
-		of more than 120,000 records have been constructed and b has responded
-		excellently, taking just a second or two to add a record, and even less
-		time to list bugs, especially filtering by owner or by grep. Of course,
-		you would have to work very hard to ever reach a bug list even close
-		to that number, and long before you get there you'll likely discover you
-		need to switch to something more powerful, so for all intents and purposes
-		b should handle everything you can throw at it.
+		Basic benchmarks indicate that b performs well even with very large lists.
+		test bug lists of more than 50,000 records have been constructed and b 
+		responds very quickly, taking just a second or two to add a record,
+		and even less time to list bugs, especially filtering by owner or by 
+		grep. Of course, you would have to work very hard to ever reach a bug
+		list even close to that number, and long before you get there you'll
+		likely discover you need to switch to something more powerful, so for
+		all intents and purposes b should handle everything you can throw at it.
 		
 	I would really like to be able to categorize my bugs, or detail how the bug
 	was resolved, why isn't that possible?
