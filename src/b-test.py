@@ -212,7 +212,7 @@ class Test(unittest.TestCase):
         self.assertTrue(re.match('Title: new test\nID: ce91fd20f393d261ea86e97fa26c273d02d43b4b\n'
                                  '\*Resolved\* Owned By: User\n'
                                  'Filed On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\n\n'
-                                 '\[comments\]\n\n\nBy: Another User\n'
+                                 '\[comments\]\n\nBy: Another User\n'
                                  'On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\nResolved an issue.\n'
                                  'How nice!',
                                  self.bd.details('c')))
@@ -228,7 +228,7 @@ class Test(unittest.TestCase):
         self.bd.add('test')
         self.bd.comment('a', 'This is a comment')
         self.assertTrue(re.match('Title: test\nID: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3'
-                        '\nFiled On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\n\n\[comments\]\n\n\n'
+                        '\nFiled On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\n\n\[comments\]\n\n'
                         'On: \w+, \w+ \d\d \d\d\d\d \d\d:\d\d[A|P]M\nThis is a comment',
                         self.bd.details('a')))
     

@@ -44,7 +44,7 @@ from mercurial import hg,commands
 #
 # Version
 #
-version = _("b Version 0.6.0 - built 11-7-11")
+version = _("b Version 0.6.1 - built 12-23-11")
 
 #
 # Static values / config settings
@@ -267,13 +267,22 @@ class BugsDict(object):
         self.file = 'bugs'
         self.detailsdir = 'details'
         self.bugs = {}
-        self.init_details = ("# Lines starting with '#' and sections without content\n# are not displayed by a call to 'details'\n#\n"
-        "[paths]\n# Paths related to this bug.\n# suggested format: REPO_PATH:LINENUMBERS\n\n\n"
-        "[details]\n# Additional details\n\n\n"
-        "[expected]\n# The expected result\n\n\n"
-        "[actual]\n# What happened instead\n\n\n"
-        "[reproduce]\n# Reproduction steps\n\n\n"
-        "[comments]\n# Comments and updates - leave your name\n")
+        # this is the default contents of the bugs directory.  If you'd like, you can
+        # modify this variable's contents.  Be sure to leave [comments] as the last field.
+        # Remember that storing metadata like [reporter] in the details file is not secure.
+        # it is recommended that you use Mercurial's excellent data-mining tools such as log
+        # and annotate to get such information.
+        self.init_details = '\n'.join([
+        "# Lines starting with '#' and sections without content\n# are not displayed by a call to 'details'\n#",
+        #"[reporter]\n# The user who created this file\n# This field can be edited, and is just a convenience\n%s\n" % self.user,
+        "[paths]\n# Paths related to this bug.\n# suggested format: REPO_PATH:LINENUMBERS\n\n",
+        "[details]\n# Additional details\n\n",
+        "[expected]\n# The expected result\n\n",
+        "[actual]\n# What happened instead\n\n",
+        #"[stacktrace]\n# A stack trace or similar diagnostic info\n\n",
+        "[reproduce]\n# Reproduction steps\n\n",
+        "[comments]\n# Comments and updates - leave your name"
+        ])
         path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
         if os.path.isdir(path):
             raise InvalidTaskfile(_("The path where the bugs database should be is blocked and cannot be created."))
