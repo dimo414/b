@@ -156,6 +156,7 @@ class Test(unittest.TestCase):
         self.bd.add('test|with"bars,and\'other\tpotentially#bad{characters}')
         self.assertEqual(self.bd.list(), 'd - test|with"bars,and\'other\t'
                          'potentially#bad{characters}\nFound 1 open bug')
+        self.assertEqual(self.bd.last_added_id,'deea8c528cd4fe5ff34b3a15bb97de097d99c4f2')
         self.conclude()
     
     def test_rename(self):

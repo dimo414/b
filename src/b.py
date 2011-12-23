@@ -266,6 +266,7 @@ class BugsDict(object):
         self.user = user
         self.file = 'bugs'
         self.detailsdir = 'details'
+        self.last_added_id = None
         self.bugs = {}
         # this is the default contents of the bugs directory.  If you'd like, you can
         # modify this variable's contents.  Be sure to leave [comments] as the last field.
@@ -283,6 +284,7 @@ class BugsDict(object):
         "[reproduce]\n# Reproduction steps\n\n",
         "[comments]\n# Comments and updates - leave your name"
         ])
+        
         path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
         if os.path.isdir(path):
             raise InvalidTaskfile(_("The path where the bugs database should be is blocked and cannot be created."))
@@ -411,6 +413,7 @@ class BugsDict(object):
         global _simple_hash
         task_id = _hash(text) if _simple_hash else _hash(text+self.user+str(time.time()))
         self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': self.user, 'text': text, 'time': time.time()}
+        self.last_added_id = task_id
         return _("Added bug %s...") % task_id[:10]
     
     def rename(self, prefix, text):
@@ -590,16 +593,18 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     
     List of Commands::
     
-    add text
+    add text [-e]
         Adds a new open bug to the database, if user is set in the config files, assigns it to user
         
-    rename prefix text
+        -e here and elsewhere launches the details editor for the issue upon successful execution of the command
+        
+    rename prefix text [-e]
         Renames The bug denoted by prefix to text.   You can use sed-style substitution strings if so desired.
         
     users [--rev rev]
         Displays a list of all users, and the number of open bugs assigned to each of them
         
-    assign prefix username [-f]
+    assign prefix username [-f] [-e]
         Assigns bug denoted by prefix to username.  Username can be a lowercase prefix of
         another username and it will be mapped to that username.  To avoid this functionality
         and assign the bug to the exact username specified, or if the user does not already
@@ -608,20 +613,20 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
         Use 'me' to assign the bug to the current user,
         and 'Nobody' to remove its assignment.
         
-    details [--rev rev] prefix
+    details [--rev rev] prefix [-e]
         Prints the extended details of the specified bug
         
     edit prefix
         Launches your specified editor to provide additional details 
         
-    comment prefix comment
+    comment prefix comment [-e]
         Appends comment to the details of the bug, along with the date
         and, if specified, your username without needing to launch an editor
         
-    resolve prefix
+    resolve prefix [-e]
         Marks the specified bug as resolved
         
-    reopen prefix
+    reopen prefix [-e]
         Marks the specified bug as open
         
     list [--rev rev] [-r] [-o owner] [-g search] [-a|-c]
@@ -637,7 +642,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             
             -c list bugs chronologically
         
-    id [--rev rev] prefix
+    id [--rev rev] prefix [-e]
         Takes a prefix and returns the full id of that bug
     
     version
@@ -766,6 +771,14 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             raise NonReadOnlyCommand(cmd)
         cmds[cmd]()
         
+        # launch the editor - will fail on commands that don't have an issue prefix
+        if cmd != 'edit' and opts['edit']:
+            if opts['rev']:
+                raise NonReadOnlyCommand('edit')
+            if cmd == 'add':
+                id = bd.last_added_id
+            cmds['edit']()
+            
         # Add all new files to Mercurial - does not commit
         if not opts['rev']:
             _track(ui,repo,bugsdir)
@@ -800,6 +813,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     #open=True,owner='*',grep='',verbose=False,quiet=False):
 cmdtable = {"b|bug|bugs": (cmd,[
                                 ('f', 'force', False, _('Force this exact username')),
+                                ('e', 'edit', False, _('Launch details editor after running command')),
                                 ('r', 'resolved', False, _('List resolved bugs')),
                                 ('o', 'owner', '*', _('Specify an owner to list by')),
                                 ('g', 'grep', '', _('Filter titles by STRING')),
