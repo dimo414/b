@@ -27,3 +27,9 @@
 
 On: Thursday, July 22 2010 03:50PM
 Improved b to output a generic (10 char) prefix of the bug, but it would be very nice if it output the current, proper prefix.  This would likely involve a new function to calculate an individual ID's prefix.
+
+By: Michael
+On: Sunday, December 25 2011 02:14AM
+Implemented a resolution to this issue, however it adds an O(n) complexity to the add command.  Given normal usage, this is likely acceptable, however it can be disabled by mercurial configuration if necessary, for instance when bulk adding issues.
+
+Using `--config 'bugs.fast_add=True'` at the command line will disable this temporarily.

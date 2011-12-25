@@ -260,10 +260,11 @@ class BugsDict(object):
     and therefore anything calling this class ought to handle that change
     (normally to the repo root)
     """
-    def __init__(self,bugsdir='.bugs',user=''):
+    def __init__(self,bugsdir='.bugs',user='',fast_add=False):
         """Initialize by reading the task files, if they exist."""
         self.bugsdir = bugsdir
         self.user = user
+        self.fast_add = fast_add
         self.file = 'bugs'
         self.detailsdir = 'details'
         self.last_added_id = None
@@ -414,7 +415,12 @@ class BugsDict(object):
         task_id = _hash(text) if _simple_hash else _hash(text+self.user+str(time.time()))
         self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': self.user, 'text': text, 'time': time.time()}
         self.last_added_id = task_id
-        return _("Added bug %s...") % task_id[:10]
+        if not self.fast_add:
+            prefix = _prefixes(self.bugs.keys())[task_id]
+            prefix = "%s:%s" % (prefix, task_id[len(prefix):10])
+        else:
+            prefix = "%s..." % task_id[:10]
+        return _("Added bug %s") % prefix
     
     def rename(self, prefix, text):
         """Renames the bug
@@ -659,6 +665,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     try:
         bugsdir = ui.config("bugs","dir",".bugs")
         user = ui.config("bugs","user",'')
+        fast_add = ui.configbool("bugs","fast_add",False)
         if user == 'hg.user':
             user = ui.username()
         path = repo.root
@@ -679,7 +686,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
                 _cat(ui,repo,os.path.join(bugsdir,'bugs'),revpath,rev)
             os.chdir(revpath)
 
-        bd = BugsDict(bugsdir,user)
+        bd = BugsDict(bugsdir,user,fast_add)
         
         if opts['rev'] and 'details'.startswith(cmd):
             # if it's a details command, try to get the details file

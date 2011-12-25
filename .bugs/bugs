@@ -1,4 +1,4 @@
-Should output prefix of newly added bug if possible          | owner:Michael, open:True, id:1364b6de76f3b532867da63223a45d429ba08a46, time:1277687762.41
+Should output prefix of newly added bug if possible          | owner:Michael, open:False, id:1364b6de76f3b532867da63223a45d429ba08a46, time:1277687762.41
 list command reports no such file when bugs dir doesn't exist | owner:Michael, open:False, id:21d24c2b58102a88fa7d6ee78cd190c5b10dafa1, time:1278106675.1
 Need to add bug files automatically                          | owner:Michael, open:False, id:27e00056bfc988ab41c023b5c0a9db9f5e9fa527, time:1277581398.52
 missing unicode support                                      | owner:ArneBab, open:True, id:286b661789a9b4ae60ffd0754888cf43563ce668, time:1306670417.88

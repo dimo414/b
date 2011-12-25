@@ -302,6 +302,7 @@ class Test(unittest.TestCase):
         """
         timelimit = 4   # seconds to allow to run
         numbugs = 10000 # number of bugs to create before testing - increase this when possible
+        self.bd.fast_add = True
         for i in range(0,numbugs):
             self.bd.add('This is bug %s - be nice to it' % str(i))
             
