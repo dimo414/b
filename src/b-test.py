@@ -146,6 +146,11 @@ class Test(unittest.TestCase):
         # tested more completely by test_users
         self.assertEqual(self.bd._get_user('us'),'User')
         
+    def test_api(self):
+        """Tests api functions that don't rely on Mercurial"""
+        # Version
+        self.assertTrue(b.version() > b.version("0.6.1"))
+        
     def test_id(self):
         """Straightforward test, ensures ID function works"""
         self.bd.add("test")
