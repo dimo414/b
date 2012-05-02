@@ -1,0 +1,32 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[paths]
+# Paths related to this bug.
+# suggested format: REPO_PATH:LINENUMBERS
+
+
+[details]
+# Additional details
+You received an email from Simon Heimberg with the subject 'Bug b-dev: b.version exists in stable, it is a string':
+
+the comment to version() in b.py of branch b-dev is wrong.
+b.version exists in older version, it is the version string.
+This also means the test for older versions should be something like
+bversion = getattr(b,"version",None)
+if callable(bversion):
+
+[expected]
+# The expected result
+
+
+[actual]
+# What happened instead
+
+
+[reproduce]
+# Reproduction steps
+
+
+[comments]
+# Comments and updates - leave your name
