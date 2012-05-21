@@ -1,0 +1,52 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[paths]
+# Paths related to this bug.
+# suggested format: REPO_PATH:LINENUMBERS
+
+
+[details]
+# Additional details
+Add a commit-like action that uses (parts of) the bug's description
+to fill-in the commit message.
+
+[expected]
+# The expected result
+  # hg b details X
+  Title: BLABLA
+  ID: ..........
+  Owned By: someone@somewhere
+  Filed On: some date
+
+  [details]
+  The protocol document should be properly formatted as a proper RFC
+
+  Signed-off-by: someone@somewhere
+
+  # hg b commit X    (or alias: hg b ci X)
+  (Maybe some text here to indicate success...)
+  # hg log -v -r tip
+  changeset:   X:.......
+  tag:         tip
+  user:        someone@somewhere
+  date:        some date
+  files:       .bugs/.....
+  description:
+  bug: BLABLA
+
+  The protocol document should be properly formatted as a proper RFC
+
+  Signed-off-by: someone@somewhere
+
+[actual]
+# What happened instead
+The user has to re-type (or copy/paste) the bug description in
+the commit message.
+
+[reproduce]
+# Reproduction steps
+
+
+[comments]
+# Comments and updates - leave your name
