@@ -55,3 +55,68 @@ the commit message.
 By: Michael
 On: Tuesday, May 22 2012 11:15PM
 I'm looking for more interest in this feature request.  Personally, a goal of b is to avoid using the commit message as a duplicate of the bug description, as I consider it a crutch of the centralized bug-tracking model.  However I'd be willing to add this functionality if people request it.
+
+----
+By: Yann E. MORIN
+On: 2012-05-23 22:52:00 +0200
+I'll try to explain why I believe this feature to be important, by taking as
+an example this very submission.
+
+To send this feature request, here are the steps I had to follow:
+
+    $ hg b add b: add a commit-like action
+    $ hg b edit 71
+    [in editor, fill-in all necessary sections]
+    $ hg commit
+    [in editor, enter a commit message]
+    $ hg email --to michael@there --bcc me@here --outgoing
+
+So, what was I supposed to enter as a commit message? I really pondered this
+question for some time (like ~15 minutes, really), before I just decided to
+just repeat the bug's title.
+
+I see that Michael use things like 'Filed foo bar buz bug'. No problem. But
+this could be done automatically, with b preparing a commit message like:
+    'bugs [flags]: foo bar buz'
+
+where 'flags' is a combination of one-char flags to quickly show the status
+of the bug report (see below).
+
+Also, in my projects, all commit messages must contain a SoB-line (I have a
+pre-commit hook that validates that commit messages do contain at least one
+such Sob-line), and I want to make it mandatory for bug reports too; all bug
+details will be required to bear a Reported-by line (with an optional
+Tested-by) in the [details] section.
+
+If b had a commit action, which:
+  - prepares a commit message from a template
+  - adds parts of the bug report to the commit message
+  - only commits the bugs database by default, and optionally the specified
+    files
+  - allows calling hooks
+
+then I believe b would be easier to use, by removing an unecessary edit of
+the commit by the user message, while guaranteeing that the project's policy
+can be easily enforced.
+
+Of course, a user may choose not to use 'hg b commit' and do run 'hg commit'.
+The b's commit action is just a kind of magic short-cut.
+
+For what it's worth, here is such a template I'd love to have:
+    bugs [..]: bug title
+
+    Repeat of the [details] section (which must contain a Sob-line)
+
+Where each of the dots in [..] each represent a single char for:
+  - first, the status of the report: [N]ew [E]dited [R]esolved re[O]pened
+  - then, if the bug is [A]ssigned or [U]nassigned
+
+And here is a synopsis I would suggest:
+  $ hg b ci                 <-- commit only the bugs DB
+  $ hg b ci --edit          <-- commit only the bugs DB, launch editor on
+                                prepared commit message
+  $ hg b ci file1 file2     <-- commit the bugs DB *and* specified files
+  $ hg b ci -e file1 file2  <-- commit the bugs DB *and* specified files,
+                                launch editor on prepared commit message
+
+Thanks for reading! :-)
