@@ -50,3 +50,8 @@ the commit message.
 
 [comments]
 # Comments and updates - leave your name
+
+
+By: Michael
+On: Tuesday, May 22 2012 11:15PM
+I'm looking for more interest in this feature request.  Personally, a goal of b is to avoid using the commit message as a duplicate of the bug description, as I consider it a crutch of the centralized bug-tracking model.  However I'd be willing to add this functionality if people request it.
