@@ -129,3 +129,17 @@ Wow, thanks for the detailed feedback.  The other reason this hasn't been implem
 History browsing, along with quality annotated commits, are both bordering on leaving the "lightweight" model of b.  Not that I terribly mind that happening, but it involves some further consideration and likely refactoring, since the codebase is built up from nice wrappers around a todo list.
 
 This is definitely on *my* todo list now though.  Thanks again.
+
+----
+By: Yann E. MORIN
+On: 2012-05-24 19:11 +0200
+
+Indeed, the template I suggested might be overkill and may be not easy to
+prepare. That was merely a suggestion! ;-)
+
+I see now that the b-commit is not that trivial, when there are two or more
+uncommitted bugs, because the .bugs/bugs file contains the changes for all
+the edited bugs, but b-commit would only commit a single bug.
+
+Anyway, I'll see if I can do something about it (I'm by far no Python
+expert, so don't hold your breath!).
