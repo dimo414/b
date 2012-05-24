@@ -120,3 +120,12 @@ And here is a synopsis I would suggest:
                                 launch editor on prepared commit message
 
 Thanks for reading! :-)
+
+
+By: Michael
+On: Wednesday, May 23 2012 10:27PM
+Wow, thanks for the detailed feedback.  The other reason this hasn't been implemented yet is the underlying complexity of doing so in a robust way.  For instance, determining [R] or [O] is not trivial.  Certainly do-able (as we get history for free with Mercurial) but very little of that functionality has been built in yet, and it might merit building up a bug-history browsing utility first, then hooking into that.  An alternative option would be some sort of state-change tracking that logs behavior inbetween commits (log that the user reopened bug 53 and commented on bug 2a, for instance) but I'm not convinced that's worth it; in comparison to proper history exploration it feels like a band-aid.
+
+History browsing, along with quality annotated commits, are both bordering on leaving the "lightweight" model of b.  Not that I terribly mind that happening, but it involves some further consideration and likely refactoring, since the codebase is built up from nice wrappers around a todo list.
+
+This is definitely on *my* todo list now though.  Thanks again.
