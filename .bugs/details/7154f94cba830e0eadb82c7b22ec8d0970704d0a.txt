@@ -143,3 +143,8 @@ the edited bugs, but b-commit would only commit a single bug.
 
 Anyway, I'll see if I can do something about it (I'm by far no Python
 expert, so don't hold your breath!).
+
+
+By: Michael
+On: Saturday, May 26 2012 01:07AM
+It's not necessarily overkill, it definitely sounds like good functionality - it just might be hard to do :P  Yes, the different possible states of the bugs directory makes for some interesting edge cases for a b-commit command.  But it's certainly doable.  Keep me posted if you make any progress, and I'll try to look into this more as well.
