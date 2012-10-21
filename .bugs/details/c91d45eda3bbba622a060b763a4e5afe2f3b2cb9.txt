@@ -1,0 +1,14 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[details]
+If you run "hg b edit ID" to edit a bug, and then close the editor without
+changing anything, that should result in no change in state in the working
+copy, similar to how an "hg commit" followed by not saving any changes aborts
+the commit.  Otherwise, running "hg b edit" on a couple tickets that don't
+already have details and then changing your mind leaves you with newly added
+template detail files that don't add any value, and require cleaning up if
+you don't want to commit them.
+
+[comments]
+# Comments and updates - leave your name
