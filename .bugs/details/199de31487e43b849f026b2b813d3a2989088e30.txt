@@ -1,0 +1,44 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[details]
+Mercurial supports a --template option for many commands, and there are plans
+to add this support to all commands.  I'd like to see something similar
+supported within b.  The command that it would be most useful for would be
+b list, since it's clearly output-oriented.  The main usecases that I'm wishing
+for are: 
+
+"[{status}] {id|shortbid} - {title}\n"
+"{date|shortdate} {id|shortbid} - {title}\n"
+
+The first would be used for a list of all issues (assuming that the feature
+request in #66b46dc4 is implemented) and the second would be used to include
+the date of the bug's creation in the listing, especially when listing
+chronologically.
+
+If possible, it would be desirable to support all installed Mercurial keyword
+filters.
+
+Further thought would need to be given into what keywords make sense to
+support.  Here's one possible proposal:
+
+date: Date information. The date when the bug was created. This could be used
+    with the age filter or various other date formatting filters.
+details: String. The contents of the details file for the bug, if it exists.
+    Comment lines and sections without content are stripped, as they would be
+    in the output of hg b details.
+id: The full ID of the bug.  It might be useful to provide a 'shortbid' filter
+    to change this to a prefix of the ID, such as the first 8 characters.  For
+    display purposes, fixed lengths often work better than variable lengths.
+owner: String. The current owner of the bug.
+status: String. Either 'Open' or 'Resolved'.  It might be useful to provide a
+    'shortbstatus' filter (similar to shortbisect) that changes this into a
+    single character, either 'O' or 'R'.
+title: String. The name/title of the bug.
+
+All of these except for title can be satisfied based solely on data in the bugs
+file.  If adding the details token increased the complexity, I think it would be
+fine to omit it; I'm not sure it's really that useful.
+
+[comments]
+# Comments and updates - leave your name

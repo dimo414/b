@@ -1,10 +1,12 @@
 Should output prefix of newly added bug if possible          | owner:Michael, open:False, id:1364b6de76f3b532867da63223a45d429ba08a46, time:1277687762.41
 New version testing collides with old b.version string       | owner:Michael, open:True, id:16d8ee7f1e369472542ac9cebecf2b113dfbaf23, time:1335967376.96
+Add support for hg b list --template TEMPLATE                | owner:, open:True, id:199de31487e43b849f026b2b813d3a2989088e30, time:1350779494.93
 list command reports no such file when bugs dir doesn't exist | owner:Michael, open:False, id:21d24c2b58102a88fa7d6ee78cd190c5b10dafa1, time:1278106675.1
 Need to add bug files automatically                          | owner:Michael, open:False, id:27e00056bfc988ab41c023b5c0a9db9f5e9fa527, time:1277581398.52
 missing unicode support                                      | owner:ArneBab, open:True, id:286b661789a9b4ae60ffd0754888cf43563ce668, time:1306670417.88
 add version command to report what version of b we're using  | owner:Michael, open:False, id:4982d102b75bda27e54c16293350ff561c248921, time:1278106694.44
 Ability to run read-only command from a specified revision -R | owner:Michael, open:False, id:6345fce4a284b182a376e1affa02eb774436689f, time:1319037514.92
+Add support for hg b list -A/--all                           | owner:, open:True, id:66b46dc4a021dcda7a17a8ee76bde490cafdc8e5, time:1350778593.68
 Files should be added to mercurial at the end, not the begining of the call | owner:Michael, open:False, id:6ba1ae74c48a6fd84c5d0698fa8169a28e88b343, time:1277680246.97
 Add commit action                                            | owner:Michael, open:True, id:7154f94cba830e0eadb82c7b22ec8d0970704d0a, time:1337638451.68
 hg b help should exist, and point to hg help b               | owner:Michael, open:False, id:7e79f51975af54656f9afdf6958df40c812b5278, time:1319064278.86

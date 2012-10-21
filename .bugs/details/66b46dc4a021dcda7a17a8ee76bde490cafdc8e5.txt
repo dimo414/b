@@ -1,0 +1,11 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[details]
+It would be useful to have the ability to list all bugs.  Currently, it is
+possible to list the unresolved bugs with hg b list and the resolved bugs
+with hg b list -r.  I'd like there to be the ability to call hg b list -A
+to list all bugs, possibly also as --all.
+
+[comments]
+# Comments and updates - leave your name
