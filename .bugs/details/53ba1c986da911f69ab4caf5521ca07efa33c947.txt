@@ -1,0 +1,10 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[details]
+Currently, "hg b resolve" only supports a single prefix.  It would be useful
+if it supported a list of prefixes to resolve multiple bugs in a single
+invocation.
+
+[comments]
+# Comments and updates - leave your name
