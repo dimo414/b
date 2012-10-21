@@ -1,0 +1,21 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[details]
+Currently, when you run "hg b edit" for a bug that doesn't yet have a details
+file, it creates a new file based on a static template hardcoded within the
+extension's implementation.  While that can remain the default behavior, I'm
+sure that in some cases, an alternate template would be desirable.  I propose
+that if a "newdetails.txt" file exists in the bugsdir, its contents will be
+used as the template instead of the default.  This allows customizations such
+as addition/removal of sections, additions/removal of comments, or even trivial
+changes such as addition of a trailing newline.
+
+Instead of hardcoding the path "newdetails.txt", it could be a default as well.
+The addition of a bugs.newdetails configuration option, interpreted as a path
+relative to the bugsdir would allow users control over the structure of the
+directory, or possibly overriding the default for a repository by specifying
+an alternate path or absolute path.
+
+[comments]
+# Comments and updates - leave your name

@@ -1,3 +1,4 @@
+Allow repository-specific details template file              | owner:, open:True, id:01d5e871a981b06fa08e1c44d792c40d53d68d34, time:1350784692.88
 Should output prefix of newly added bug if possible          | owner:Michael, open:False, id:1364b6de76f3b532867da63223a45d429ba08a46, time:1277687762.41
 New version testing collides with old b.version string       | owner:Michael, open:True, id:16d8ee7f1e369472542ac9cebecf2b113dfbaf23, time:1335967376.96
 Add support for hg b list --template TEMPLATE                | owner:, open:True, id:199de31487e43b849f026b2b813d3a2989088e30, time:1350779494.93
