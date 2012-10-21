@@ -1,0 +1,12 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[details]
+I was working on porting the existing issues for a small project over to b.
+I added the tickets, and then I was going to assign 3 tickets to myself.  The
+command I expected to enter was "hg b assign me ID ID ID".  However, it looks
+like currently, the ID has to come first, and only one is supported per
+invocation.
+
+[comments]
+# Comments and updates - leave your name
