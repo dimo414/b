@@ -13,6 +13,9 @@ I think b is executing the editor command with space, where it should be with an
 It works with ``EDITOR=emacsclient``.
 Reported by Takafumi Arakaki
 
+The naive solution obviously doesn't work, but the shlex module should offer more robust support:
+http://stackoverflow.com/questions/899276/python-how-to-parse-strings-to-look-like-sys-argv
+
 [expected]
 # The expected result
 
