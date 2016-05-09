@@ -39,7 +39,10 @@ import os, errno, re, hashlib, sys, subprocess, tempfile, time
 from datetime import date, datetime
 from operator import itemgetter
 from mercurial.i18n import _
-from mercurial import hg,commands
+from mercurial import hg, commands, cmdutil
+
+cmdtable = {}
+command = cmdutil.command(cmdtable)
 
 #
 # Version
@@ -597,6 +600,20 @@ def _cat(ui,repo,file,todir,rev=None):
 #
 # Command line processing
 #
+@command("b|bug|bugs",
+         [
+          ('f', 'force', False, _('Force this exact username')),
+          ('e', 'edit', False, _('Launch details editor after running command')),
+          ('r', 'resolved', False, _('List resolved bugs')),
+          ('o', 'owner', '*', _('Specify an owner to list by')),
+          ('g', 'grep', '', _('Filter titles by STRING')),
+          ('a', 'alpha', False, _('Sort list alphabetically')),
+          ('c', 'chrono', False, _('Sort list chronologically')),
+          ('T', 'truncate', False, _('Truncate list output to fit window')),
+          ('', 'rev', '', _('Run a read-only command against a different revision'))
+         ],
+         "cmd [args]"
+        )
 def cmd(ui,repo,cmd = 'list',*args,**opts):
     """ Distributed Bug Tracker For Mercurial
     
@@ -821,18 +838,6 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
         ui.warn(_("'%s' is not a read-only command - cannot run against a past revision\n") % e.cmd)
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
-cmdtable = {"b|bug|bugs": (cmd,[
-                                ('f', 'force', False, _('Force this exact username')),
-                                ('e', 'edit', False, _('Launch details editor after running command')),
-                                ('r', 'resolved', False, _('List resolved bugs')),
-                                ('o', 'owner', '*', _('Specify an owner to list by')),
-                                ('g', 'grep', '', _('Filter titles by STRING')),
-                                ('a', 'alpha', False, _('Sort list alphabetically')),
-                                ('c', 'chrono', False, _('Sort list chronologically')),
-                                ('T', 'truncate', False, _('Truncate list output to fit window')),
-                                ('', 'rev', '', _('Run a read-only command against a different revision'))
-                           ]
-                           ,_("cmd [args]"))}
 
 #
 # Programmatic access to b
