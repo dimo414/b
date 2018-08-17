@@ -39,10 +39,10 @@ import os, errno, re, hashlib, sys, subprocess, tempfile, time
 from datetime import date, datetime
 from operator import itemgetter
 from mercurial.i18n import _
-from mercurial import hg, commands, cmdutil
+from mercurial import hg, commands, registrar
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 
 #
 # Version
