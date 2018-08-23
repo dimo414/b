@@ -1,0 +1,26 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[paths]
+b.py:522
+
+[details]
+My editor is defined in .hgrc as 'vim -c "set tw=76"'.  The `editor.split()`
+call in `edit` splits that into ['vim', '-c', '"set', 'tw=76"'].  This cases
+vim to open two files, one named 'tw=76"' and the real bug file.  Instead,
+`edit` should split the string into ['vim', '-c', 'set tw=76'].
+
+[expected]
+vim should open only the bug file
+
+
+[actual]
+vim opens 'tw=76"' plus the bug file
+
+
+[reproduce]
+env EDITOR='vim -c "set tw=76"' hg b add foo -e
+
+
+[comments]
+# Comments and updates - leave your name
