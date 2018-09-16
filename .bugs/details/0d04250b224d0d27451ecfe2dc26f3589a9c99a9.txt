@@ -24,3 +24,7 @@ env EDITOR='vim -c "set tw=76"' hg b add foo -e
 
 [comments]
 # Comments and updates - leave your name
+
+
+On: Sunday, September 16 2018 03:21PM
+Resolving by swapping the subprocess call to use shell=True, rather than attempting manual splitting.

@@ -49,8 +49,8 @@ command = registrar.command(cmdtable)
 #
 _major_version = 0
 _minor_version = 6
-_fix_version = 2
-_build_date = date(2012,3,4)
+_fix_version = 3
+_build_date = date(2018,9,16)
 
 #
 # Static values / config settings
@@ -513,15 +513,13 @@ class BugsDict(object):
         
         return text.strip()
     
-    def edit(self, prefix, editor='notepad'):
+    def edit(self, prefix, editor):
         """Allows the user to edit the details of the specified bug"""
         task = self[prefix] # confirms prefix does exist
         path = self._get_details_path(task['id'])[1]
         if not os.path.exists(path):
             self._make_details_file(task['id'])
-        subprocess.call(editor.split() + [path])
-        #subprocess.call()
-        #print _timestamp()
+        subprocess.call("%s '%s'" % (editor, path), shell=True)
     
     def comment(self, prefix, comment):
         """Allows the user to add a comment to the bug without launching an editor.
