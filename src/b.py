@@ -126,12 +126,12 @@ class NonReadOnlyCommand(Exception):
 #       
 # Helper Methods - often straight from t
 #
-def _datetime(t = ''):
+def _datetime(timestamp = None):
     """ Returns a formatted string of the time from a timestamp, or now if t is not set. """
-    if t == '':
-        t = datetime.now()
+    if timestamp:
+        t = datetime.fromtimestamp(float(timestamp))
     else:
-        t = datetime.fromtimestamp(float(t))
+        t = datetime.now()
     return t.strftime("%A, %B %d %Y %I:%M%p")
 
 def _hash(text):
@@ -155,7 +155,7 @@ def _mkdir_p(path):
 
 def _truth(str):
     """ Indicates the truth of a string """ 
-    return str == 'True'
+    return str == 'True' or str == 'true'
 
 def _task_from_taskline(taskline):
     """Parse a taskline (from a task file) and return a task.
@@ -184,7 +184,12 @@ def _task_from_taskline(taskline):
         else:
             text = taskline.strip()
             global _simple_hash
-            task = { 'id': _hash(text) if _simple_hash else _hash(text+str(time.time())), 'text': text, 'owner': '', 'open': 'True', 'time': time.time() }
+            task = { 'id': _hash(text) if _simple_hash else _hash(text+str(time.time())),
+                     'text': text,
+                     'owner': '',
+                     'open': 'True',
+                     'time': time.time()
+            }
         return task
     except Exception:
         raise InvalidTaskfile(_("perhaps a missplaced '|'?\n"
@@ -560,9 +565,10 @@ class BugsDict(object):
         if owner != '*':
             owner = self._get_user(owner)
         
-        small = [task for task in tasks.values() if _truth(task['open']) == open and 
-                                                     (owner == '*' or owner == task['owner']) and 
-                                                     (grep == '' or grep.lower() in task['text'].lower())]
+        small = [task for task in tasks.values()
+                 if _truth(task['open']) == open
+                 and (owner == '*' or owner == task['owner'])
+                 and  (grep == '' or grep.lower() in task['text'].lower())]
         if len(small) > 0:
             plen = max([len(task['prefix']) for task in small])
         else:
