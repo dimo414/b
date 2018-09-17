@@ -1,7 +1,7 @@
 Allow repository-specific details template file              | owner:, open:True, id:01d5e871a981b06fa08e1c44d792c40d53d68d34, time:1350784692.88
 edit doesn't handle editors with quotes                      | owner:Michael, open:False, id:0d04250b224d0d27451ecfe2dc26f3589a9c99a9, time:1535046041.99
 Should output prefix of newly added bug if possible          | owner:Michael, open:False, id:1364b6de76f3b532867da63223a45d429ba08a46, time:1277687762.41
-New version testing collides with old b.version string       | owner:Michael, open:True, id:16d8ee7f1e369472542ac9cebecf2b113dfbaf23, time:1335967376.96
+New version testing collides with old b.version string       | owner:Michael, open:False, id:16d8ee7f1e369472542ac9cebecf2b113dfbaf23, time:1335967376.96
 Add support for hg b list --template TEMPLATE                | owner:, open:True, id:199de31487e43b849f026b2b813d3a2989088e30, time:1350779494.93
 list command reports no such file when bugs dir doesn't exist | owner:Michael, open:False, id:21d24c2b58102a88fa7d6ee78cd190c5b10dafa1, time:1278106675.1
 Need to add bug files automatically                          | owner:Michael, open:False, id:27e00056bfc988ab41c023b5c0a9db9f5e9fa527, time:1277581398.52

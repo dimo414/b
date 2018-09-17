@@ -41,19 +41,10 @@ from operator import itemgetter
 from mercurial.i18n import _
 from mercurial import hg, commands, registrar
 
-cmdtable = {}
-command = registrar.command(cmdtable)
-
-# And others circa 2010, before this variable existed
-testedwith='4.7'
-buglink = 'http://hg.mwdiamond.com/b'
-
 #
-# Version
+# Version Info
 #
-_major_version = 0
-_minor_version = 6
-_fix_version = 3
+_version_num = (0,6,3)
 _build_date = date(2018,9,16)
 
 #
@@ -605,6 +596,11 @@ def _cat(ui,repo,file,todir,rev=None):
     commands.cat(ui,repo,file,rev=rev,output=os.path.join(todir,file))
     ui.popbuffer()
 
+cmdtable = {}
+command = registrar.command(cmdtable)
+testedwith='4.7' # And others circa 2010, before this variable existed
+buglink = 'http://hg.mwdiamond.com/b'
+
 #
 # Command line processing
 #
@@ -771,7 +767,7 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
             commands.help_(ui,'b')
 
         def _version():
-            ui.write(_("b Version %d.%d.%d - built %s\n") % (_major_version,_minor_version,_fix_version,_build_date))
+            ui.write(_("b Version %s - built %s\n") % ("%d.%d.%d" % _version_num, _build_date))
 
         readonly_cmds = set(['users','details','list','id'])
         cmds = {
@@ -851,20 +847,18 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
 # Programmatic access to b
 #
 
-def version(version = None):
+def version(given_version = None):
     """Returns a numerical representation of the version number, or takes a version string.
     Can be used for comparison:
         b.version() > b.version("0.7.0")
     
-    Note: Before version 0.6.2 these functions did not exist.  A call to:
-        getattr(b,"version",None) == None
-    indicates a version before 0.6.2"""
-    def num_version(a,b,c):
-        return a*100+b+float('.%d' % c)
-    if(version):
-        a,b,c = [int(ver) for ver in version.split('.') if ver.isdigit()]
-        return num_version(a,b,c)
-    return num_version(_major_version,_minor_version,_fix_version)
+    Note: Before version 0.6.2 this function did not exist. If:
+        callable(getattr(b, "version", None))
+    returns false, that indicates a version before 0.6.2"""
+    if(given_version):
+        a,b,c = (int(ver) for ver in given_version.split('.') if ver.isdigit())
+        return (a,b,c)
+    return _version_num
 
 def bugs_dir(ui):
     """Returns the path to the bugs dir, relative to the repo root"""
