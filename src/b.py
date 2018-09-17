@@ -44,6 +44,10 @@ from mercurial import hg, commands, registrar
 cmdtable = {}
 command = registrar.command(cmdtable)
 
+# And others circa 2010, before this variable existed
+testedwith='4.7'
+buglink = 'http://hg.mwdiamond.com/b'
+
 #
 # Version
 #

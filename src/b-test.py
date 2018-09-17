@@ -320,7 +320,7 @@ class Test(unittest.TestCase):
         self.bd.list()
 
 def hook(ui, repo, *args, **opts):
-    if ui.promptchoice("Would you like to run unit tests before committing? (y/n):",['&No','&Yes']):
+    if ui.promptchoice("Would you like to run unit tests before committing? (Y/n):$$ &Yes $$ &No") == 0:
         suite = unittest.TestLoader().loadTestsFromTestCase(Test)
         result = unittest.TextTestRunner().run(suite)
         return len(result.errors)+len(result.failures)
