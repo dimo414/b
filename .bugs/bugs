@@ -24,4 +24,5 @@ adding a long issue rewrites entire bugs file to align metadata | owner:Michael,
 Don't add unchanged details files                            | owner:, open:True, id:c91d45eda3bbba622a060b763a4e5afe2f3b2cb9, time:1350783561.08
 Calling commands that expect an ID without passing an ID throws an exception | owner:Michael, open:False, id:d33d694650de726f70ff49003835fe6cc61d8d6d, time:1277687733.59
 Optional sort list output chronologically or alphabetically  | owner:Michael, open:False, id:f1eea79125e30a71e7d666c640905fcda86ba0dc, time:1319037412.65
+resolve/reopen should fail if issue is already resolved/open | owner:, open:True, id:f44b5dd6068d720c2b41abe0d207f87dd60a6f11, time:1537288660.44
 b Should provide some way to check for empty resolutions     | owner:Michael, open:True, id:f930482615ce618feaff88cca7ec5d998dd6408f, time:1319066183.21
