@@ -1,0 +1,68 @@
+# Lines starting with '#' and sections without content
+# are not displayed by a call to 'details'
+#
+[paths]
+# Paths related to this bug.
+# suggested format: REPO_PATH:LINENUMBERS
+
+
+[details]
+# Additional details
+
+
+[expected]
+# The expected result
+
+
+[actual]
+# What happened instead
+
+
+[reproduce]
+# Reproduction steps
+$ hg b list --rev 0
+** unknown exception encountered, please report by visiting
+** https://mercurial-scm.org/wiki/BugTracker
+** Python 2.7.10 (default, Oct  6 2017, 22:29:07) [GCC 4.2.1 Compatible Apple LLVM 9.0.0 (clang-900.0.31)]
+** Mercurial Distributed SCM (version 4.7rc0+14-545a3e6650cd)
+** Extensions loaded: b
+** ProgrammingError: unsupported changeid '0' of type <type 'str'>
+Traceback (most recent call last):
+  File "/usr/local/bin/hg", line 41, in <module>
+    dispatch.run()
+  File "/Library/Python/2.7/site-packages/mercurial/dispatch.py", line 90, in run
+    status = dispatch(req)
+  File "/Library/Python/2.7/site-packages/mercurial/dispatch.py", line 213, in dispatch
+    ret = _runcatch(req) or 0
+  File "/Library/Python/2.7/site-packages/mercurial/dispatch.py", line 354, in _runcatch
+    return _callcatch(ui, _runcatchfunc)
+  File "/Library/Python/2.7/site-packages/mercurial/dispatch.py", line 362, in _callcatch
+    return scmutil.callcatch(ui, func)
+  File "/Library/Python/2.7/site-packages/mercurial/scmutil.py", line 161, in callcatch
+    return func()
+  File "/Library/Python/2.7/site-packages/mercurial/dispatch.py", line 344, in _runcatchfunc
+    return _dispatch(req)
+  File "/Library/Python/2.7/site-packages/mercurial/dispatch.py", line 984, in _dispatch
+    cmdpats, cmdoptions)
+  File "/Library/Python/2.7/site-packages/mercurial/dispatch.py", line 730, in runcommand
+    ret = _runcommand(ui, options, cmd, d)
+  File "/Library/Python/2.7/site-packages/mercurial/dispatch.py", line 992, in _runcommand
+    return cmdfunc()
+  File "/Library/Python/2.7/site-packages/mercurial/dispatch.py", line 981, in <lambda>
+    d = lambda: util.checksignature(func)(ui, *args, **strcmdopt)
+  File "/Library/Python/2.7/site-packages/mercurial/util.py", line 1528, in check
+    return func(*args, **kwargs)
+  File "/Users/diamondm/IntelliJ/b/src/b.py", line 705, in cmd
+    rev = str(repo[revid])
+  File "/Library/Python/2.7/site-packages/mercurial/localrepo.py", line 854, in __getitem__
+    return context.changectx(self, changeid)
+  File "/Library/Python/2.7/site-packages/mercurial/context.py", line 439, in __init__
+    (changeid, type(changeid)))
+mercurial.error.ProgrammingError: unsupported changeid '0' of type <type 'str'>
+
+[comments]
+# Comments and updates - leave your name
+
+On: Monday, October 08 2018 06:14PM
+Keywords like 'tip' still work, but hashes and revision numbers fail.
+See also https://www.mercurial-scm.org/wiki/MercurialApi#Repositories

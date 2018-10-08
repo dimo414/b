@@ -322,6 +322,7 @@ class Test(unittest.TestCase):
         self.bd.list()
 
 def hook(ui, repo, *args, **opts):
+    # TODO move hook into a shell script so it can call this and BATS
     if ui.promptchoice("Would you like to run unit tests before committing? (Y/n):$$ &Yes $$ &No") == 0:
         suite = unittest.TestLoader().loadTestsFromTestCase(Test)
         result = unittest.TextTestRunner().run(suite)
