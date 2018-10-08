@@ -24,6 +24,8 @@ always be run before pushing.
 import os, re, shutil, sys, tempfile, unittest
 # adds everything in the same directory to pythonpath regardless of how the module is run
 sys.path.append(os.path.dirname(__file__))
+# Configures simple hashing
+os.environ['HG_B_SIMPLE_HASHING'] = 'true'
 import b
 
 _debug = False

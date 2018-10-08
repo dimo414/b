@@ -48,13 +48,6 @@ _version_num = (0,6,3)
 _build_date = date(2018,9,16)
 
 #
-# Static values / config settings
-#
-"""By default, IDs are made from title, time, and username when availible.
-When true, only the title is used to make IDs."""
-_simple_hash = False
-
-#
 # Exceptions
 #
 class InvalidDetailsFile(Exception):
@@ -129,13 +122,18 @@ def _datetime(timestamp = None):
         t = datetime.now()
     return t.strftime("%A, %B %d %Y %I:%M%p")
 
-def _hash(text):
+def _hash(*args):
     """Return a hash of the given text for use as an id.
     
     Currently SHA1 hashing is used.  It should be plenty for our purposes.
     
     """
-    return hashlib.sha1(text.encode('utf-8')).hexdigest()
+    return hashlib.sha1(''.join(args).encode('utf-8')).hexdigest()
+
+if 'HG_B_SIMPLE_HASHING' in os.environ:
+    def _hash(*args):
+        """Hashes only the first argument"""
+        return hashlib.sha1(args[0].encode('utf-8')).hexdigest()
 
 def _mkdir_p(path):
     """ race condition handling recursive mkdir -p call
@@ -178,8 +176,7 @@ def _task_from_taskline(taskline):
                 task[label.strip()] = data.strip()
         else:
             text = taskline.strip()
-            global _simple_hash
-            task = { 'id': _hash(text) if _simple_hash else _hash(text+str(time.time())),
+            task = { 'id': _hash(text, str(time.time())),
                      'text': text,
                      'owner': '',
                      'open': 'True',
@@ -417,8 +414,7 @@ class BugsDict(object):
     
     def add(self, text):
         """Adds a bug with no owner to the task list"""
-        global _simple_hash
-        task_id = _hash(text) if _simple_hash else _hash(text+self.user+str(time.time()))
+        task_id = _hash(text, self.user, str(time.time()))
         self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': self.user, 'text': text, 'time': time.time()}
         self.last_added_id = task_id
         if not self.fast_add:
