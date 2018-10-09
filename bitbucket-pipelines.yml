@@ -1,0 +1,8 @@
+image: dimo414/ci-bash
+
+pipelines:
+  default:
+    - step:
+        script:
+          - python src/b-test.py
+          - bats src
