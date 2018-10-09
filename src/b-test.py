@@ -6,20 +6,7 @@
 # GNU General Public License version 2 or any later version.
 # http://www.gnu.org/licenses/licenses.html
 # http://www.gnu.org/licenses/gpl.html
-"""Standalone unit tests for b, simply run this file
-
-This module can be run directly, or as a Mercurial hook.  Run as a hook,
-it will prompt you if you would like to run the tests, and then stop the
-command if a test fails.  It is suggested you use it with the precommit
-hook, like so:
-
-[hooks]
-precommit=python:src/b-test.py:hook
-
-This does not stop you from committing (simply tell it not to run the tests)
-but is provided as a convenience to prevent regressions.  Tests should
-always be run before pushing.
-"""
+"""Standalone unit tests for b, simply run this file"""
 
 import os, re, shutil, sys, tempfile, unittest
 # adds everything in the same directory to pythonpath regardless of how the module is run
@@ -321,12 +308,10 @@ class Test(unittest.TestCase):
         
         self.bd.list()
 
+# Safe to delete after Dec 2018.
 def hook(ui, repo, *args, **opts):
-    # TODO move hook into a shell script so it can call this and BATS
-    if ui.promptchoice("Would you like to run unit tests before committing? (Y/n):$$ &Yes $$ &No") == 0:
-        suite = unittest.TestLoader().loadTestsFromTestCase(Test)
-        result = unittest.TextTestRunner().run(suite)
-        return len(result.errors)+len(result.failures)
+    ui.warn("Please replace this precommit hook with ./commithook.sh\n")
+    return 1
 
 if __name__ == "__main__":
     import sys
