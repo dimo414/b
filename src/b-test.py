@@ -83,7 +83,7 @@ class Test(unittest.TestCase):
                     "task | id:12|34, owner=you?" # can't handle | in metadata
                     ]
         for tl in bad_list:
-            self.assertRaises(b.InvalidTaskfile, b._task_from_taskline, tl)
+            self.assertRaises(IOError, b._task_from_taskline, tl)
 
         #_tasklines_from_tasks
         b._tasklines_from_tasks([

@@ -28,7 +28,7 @@ setup() {
   local dir
   dir=$(mktemp -d "$BATS_TMPDIR/b-test-$BATS_TEST_NUMBER-XXXXXX")
   cd "$dir"
-  hg init
+  _hg init
 }
 
 @test "basic flow" {
@@ -222,4 +222,75 @@ setup() {
   hg b id 7 --rev 0
 
   echo DONE; false
+}
+
+# Failure Tests
+# TODO simplify these tests once failures return a non-zero exit code properly
+
+@test "bad-db is-dir" {
+  mkdir -p .bugs/bugs
+  run_hg b list
+  (( status != 0 ))
+}
+
+@test "bad-db malformed" {
+  mkdir -p .bugs
+  echo "foo | bar" > .bugs/bugs
+  run_hg b list
+  (( status != 0 ))
+}
+
+@test "bad-command" {
+  run_hg b foo
+  [[ "$output" =~ No\ such\ command ]]
+
+  run_hg b ''
+  [[ "$output" =~ ambiguous ]]
+  run_hg b re
+  [[ "$output" =~ ambiguous ]]
+}
+
+@test "bad-input" {
+  hg b add some bug
+  run_hg b assign -f 7 'foo|bar'
+  [[ "$output" =~ Invalid\ input ]]
+}
+
+@test "bad-prefix-args" {
+  # titles hash to a common prefix b7
+  hg b add some bug 8
+  hg b add some bug 9
+  hg b list -a
+
+  run_hg b id ''
+  [[ "$output" =~ provide\ an\ issue ]]
+
+  run_hg b id b7
+  [[ "$output" =~ ambiguous ]]
+
+  run_hg b id c
+  [[ "$output" =~ could\ not\ be\ found ]]
+}
+
+@test "bad-user-args" {
+  hg b add some bug
+  hg b add another bug
+  hg b assign 7 -f UserA
+  hg b assign 8 -f UserB
+
+  run_hg b list -o ''
+  [[ "$output" =~ more\ than\ one ]]
+
+  run_hg b list -o use
+  [[ "$output" =~ more\ than\ one ]]
+
+  run_hg b list -o foo
+  [[ "$output" =~ did\ not\ match ]]
+}
+
+@test "bad-readonly-cmd" {
+  hg b add some bug
+  hg --config ui.username=username commit -m "commit"
+  run_hg b --rev tip add some bug
+  [[ "$output" =~ not\ a\ read-only ]]
 }

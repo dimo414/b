@@ -50,17 +50,6 @@ _build_date = date(2018,9,16)
 #
 # Exceptions
 #
-class InvalidDetailsFile(Exception):
-    def __init__(self,prefix):
-        """Raised when a bug's details file is invalid (is a dir)"""
-        super(InvalidDetailsFile, self).__init__()
-        self.prefix = prefix
-
-class InvalidTaskfile(Exception):
-    """Raised when the path to a task file already exists as a directory."""
-    def __init__(self, reason=''):
-        super(InvalidTaskfile, self).__init__()
-        self.reason = reason
 
 class AmbiguousPrefix(Exception):
     """Raised when trying to use a prefix that could identify multiple tasks."""
@@ -184,7 +173,7 @@ def _task_from_taskline(taskline):
             }
         return task
     except Exception:
-        raise InvalidTaskfile(_("perhaps a missplaced '|'?\n"
+        raise IOError(errno.EIO, _("Failed to parse task; perhaps a missplaced '|'?\n"
                                 "Line is: %s") % taskline)
 
 def _tasklines_from_tasks(tasks):
@@ -290,29 +279,23 @@ class BugsDict(object):
         ])
         
         path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
-        if os.path.isdir(path):
-            raise InvalidTaskfile(_("The path where the bugs database should be is blocked and cannot be created."))
         if os.path.exists(path):
-            tfile = open(path, 'r')
-            tlns = tfile.readlines()
-            tls = [tl.strip() for tl in tlns if tl.strip()]
-            tasks = map(_task_from_taskline, tls)
-            for task in tasks:
-                self.bugs[task['id']] = task
-            tfile.close()
+            with open(path, 'r') as tfile:
+                tlns = tfile.readlines()
+                tls = [tl.strip() for tl in tlns if tl.strip()]
+                tasks = map(_task_from_taskline, tls)
+                for task in tasks:
+                    self.bugs[task['id']] = task
     
     def write(self):
         """Flush the finished and unfinished tasks to the files on disk."""
         _mkdir_p(self.bugsdir)
         path = os.path.join(os.path.expanduser(self.bugsdir), self.file)
-        if os.path.isdir(path):
-            raise InvalidTaskfile(_("The path where the bugs database should be is blocked and cannot be created."))
         tasks = sorted(self.bugs.values(), key=itemgetter('id'))
-        tfile = open(path, 'w')
-        for taskline in _tasklines_from_tasks(tasks):
-            tfile.write(taskline)
-        tfile.close()
-    
+        with open(path, 'w') as tfile:
+            for taskline in _tasklines_from_tasks(tasks):
+                tfile.write(taskline)
+
     def __getitem__(self, prefix):
         """Return the task with the given prefix.
         
@@ -345,12 +328,9 @@ class BugsDict(object):
         (dirpath,path) = self._get_details_path(full_id)
         if not os.path.exists(dirpath):
             _mkdir_p(dirpath)
-        if os.path.isdir(path):
-            raise InvalidDetailsFile(full_id)
         if not os.path.exists(path):
-            f = open(path, "w+")
-            f.write(self.init_details)
-            f.close()
+            with open(path, "w+") as f:
+                f.write(self.init_details)
         return path
     
     def _users_list(self):
@@ -479,12 +459,8 @@ class BugsDict(object):
         task = self[prefix] # confirms prefix does exist
         path = self._get_details_path(task['id'])[1]
         if os.path.exists(path):
-            if os.path.isdir(path):
-                raise InvalidDetailsFile(prefix)
-            
-            f = open(path)
-            text = f.read()
-            f.close()
+            with open(path) as f:
+                text = f.read()
             
             text = re.sub("(?m)^#.*\n?", "", text)
             
@@ -531,10 +507,9 @@ class BugsDict(object):
         if self.user != '':
             comment = _("By: %s\n%s") % (self.user,comment)
             
-        f = open(path, "a")
-        f.write("\n\n"+comment)
-        f.close()
-    
+        with open(path, "a") as f:
+            f.write("\n\n"+comment)
+
     def resolve(self, prefix):
         """Marks a bug as resolved"""
         task = self[prefix]
@@ -588,9 +563,11 @@ def _track(ui,repo,dir):
         ui.popbuffer()
 
 def _cat(ui,repo,file,todir,rev=None):
-    ui.pushbuffer()
-    commands.cat(ui,repo,file,rev=rev,output=os.path.join(todir,file))
-    ui.popbuffer()
+    ui.pushbuffer(error=True)
+    success = commands.cat(ui,repo,file,rev=rev,output=os.path.join(todir,file))
+    msg = ui.popbuffer()
+    if success != 0:
+        raise IOError(errno.ENOENT, _("Failed to access %s at rev %s\nDetails: %s") % (file,rev,msg))
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -810,10 +787,6 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
         if not opts['rev']:
             _track(ui,repo,bugsdir)
     
-    except InvalidDetailsFile, e:
-        ui.warn(_("The path where %s's details should be is blocked and cannot be created.  Are there directories in the details dir?\n"))
-    except InvalidTaskfile, e:
-        ui.warn(_("Invalid bugs database: %s\n") % e.reason)
     except InvalidInput, e:
         ui.warn(_("Invalid input: %s\n") % e.reason)
     except AmbiguousPrefix, e:
@@ -836,6 +809,11 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
         ui.warn(_("Command ambiguous between: %s\n") % (', '.join(e.cmd)))
     except NonReadOnlyCommand, e:
         ui.warn(_("'%s' is not a read-only command - cannot run against a past revision\n") % e.cmd)
+    except IOError, e:
+        # Manually print traceback since Mercurial suppresses known errnos
+        #import traceback
+        #print(traceback.format_exc())
+        raise e
 
     #open=True,owner='*',grep='',verbose=False,quiet=False):
 
