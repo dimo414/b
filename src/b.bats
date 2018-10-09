@@ -164,7 +164,7 @@ setup() {
 
   run_hg b list
   [[ "$output" =~ Found\ 2\ open ]]
-  hg b list -r
+  run_hg b list -r
   [[ "$output" =~ Found\ 1\ resolved ]]
   run_hg b list -o UserA
   [[ "$output" =~ Found\ 1\ open ]]
