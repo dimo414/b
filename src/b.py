@@ -35,7 +35,7 @@ See the README file for more details on what you can, and can't, do with b.
 #
 # Imports
 #
-import os, errno, re, hashlib, sys, subprocess, tempfile, time
+import os, errno, re, hashlib, sys, subprocess, tempfile, time, traceback
 from datetime import date, datetime
 from operator import itemgetter
 from mercurial.i18n import _
@@ -44,12 +44,17 @@ from mercurial import hg, commands, registrar
 #
 # Version Info
 #
-_version_num = (0,6,3)
+_version_num = (0,6,4)
 _build_date = date(2018,9,16)
 
 #
 # Exceptions
 #
+class RequiresPrefix(Exception):
+    """Raised by CLI when a prefix is required."""
+    def __init__(self, prefix):
+        super(RequiresPrefix, self).__init__()
+        self.prefix = prefix
 
 class AmbiguousPrefix(Exception):
     """Raised when trying to use a prefix that could identify multiple tasks."""
@@ -76,13 +81,6 @@ class UnknownUser(Exception):
         super(UnknownUser, self).__init__()
         self.user = user
 
-class InvalidInput(Exception):
-    """Raised when the input to a command is somehow invalid - for example,
-    a username with a | character will cause problems parsing the bugs file."""
-    def __init__(self, reason):
-        super(InvalidInput, self).__init__()
-        self.reason = reason
-
 class AmbiguousCommand(Exception):
     """Raised when trying to run a command by prefix that matches more than one command."""
     def __init__(self, cmd):
@@ -94,6 +92,19 @@ class UnknownCommand(Exception):
     def __init__(self, cmd):
         super(UnknownCommand, self).__init__()
         self.cmd = cmd
+
+class InvalidCommand(Exception):
+    """Raised when command invocation is invalid, e.g. incorrect options."""
+    def __init__(self, reason):
+        super(InvalidCommand, self).__init__()
+        self.reason = reason
+
+class InvalidInput(Exception):
+    """Raised when the input to a command is somehow invalid - for example,
+    a username with a | character will cause problems parsing the bugs file."""
+    def __init__(self, reason):
+        super(InvalidInput, self).__init__()
+        self.reason = reason
 
 class NonReadOnlyCommand(Exception):
     """Raised when user tries to run a destructive command against a read only issue db."""
@@ -240,7 +251,7 @@ def _describe_print(num,type,owner,filter):
     return out
 
 #
-# Primary Class
+# b's business logic and programatic API
 #
 class BugsDict(object):
     """A set of bugs, issues, and tasks, both finished and unfinished, for a given repository.
@@ -550,7 +561,73 @@ class BugsDict(object):
                 line = line[:truncate-4]+'...'
             out += line+'\n'
         return out + _describe_print(len(small),open,owner,grep)
-    
+
+#
+# Decorators for argument validation
+#
+
+def simple_decorator(decorator):
+    """Decorator-decorator: https://wiki.python.org/moin/PythonDecoratorLibrary"""
+    def new_decorator(f):
+        g = decorator(f)
+        g.__name__ = f.__name__
+        g.__doc__ = f.__doc__
+        g.__dict__.update(f.__dict__)
+        return g
+    return new_decorator
+
+class valid_opts:
+    def __init__(self, *valid_opts):
+        self.valid_opts = set(valid_opts)
+
+    def __call__(self, f):
+        def non_default(key, value):
+            if key == 'owner':
+                return value != '*'
+            return value
+
+        def d(that, args, opts):
+            invalid_opts = [o for o in opts
+                            if non_default(o, opts[o])
+                            and o not in self.valid_opts]
+            if invalid_opts:
+                raise InvalidCommand("--%s is not a supported flag for this command" % invalid_opts[0])
+            return f(that, args, opts)
+        # TODO have @simple_decorator support decorator classes
+        d.__name__ = f.__name__
+        d.__doc__ = f.__doc__
+        d.__dict__.update(f.__dict__)
+        return d
+
+@simple_decorator
+def zero_args(f):
+    def d(self, args, opts):
+        if args:
+            raise InvalidCommand("Expected zero arguments, got '%s'" % ' '.join(args))
+        return f(self, opts)
+    return d
+
+@simple_decorator
+def prefix_arg(f):
+    def d(self, args, opts):
+        # TODO maybe we should just treat zero-args as an empty prefix string,
+        # and let the ambiguous prefix check handle that?
+        if len(args) < 1:
+            raise RequiresPrefix("Issue prefix required")
+        elif len(args) > 1:
+            raise InvalidCommand("Unexpected arguments: %s" % args[1:])
+        else:
+            return f(self, args[0], opts)
+    return d
+
+@simple_decorator
+def prefix_plus_args(f):
+    def d(self, args, opts):
+        if len(args) < 1:
+            raise RequiresPrefix("Issue prefix required")
+        return f(self, args[0], args[1:], opts)
+    return d
+
 #
 # Mercurial Extention Operations
 # These are used to allow the tool to work as a Hg Extention
@@ -568,6 +645,198 @@ def _cat(ui,repo,file,todir,rev=None):
     msg = ui.popbuffer()
     if success != 0:
         raise IOError(errno.ENOENT, _("Failed to access %s at rev %s\nDetails: %s") % (file,rev,msg))
+
+class _CLI(object):
+    """Command line interface."""
+    def __init__(self, ui, repo):
+        self.ui = ui
+        self.repo = repo
+        self.bugsdir = bugs_dir(ui)
+
+        # TODO don't require a magic string for the default username
+        self.user = self.ui.config("bugs","user",'')
+        if self.user == 'hg.user':
+            self.user = self.ui.username()
+
+        self._bd = None
+        self._revpath = None
+
+    def bd(self, opts):
+        if self._bd:
+            raise Exception("Don't construct the BugsDict more than once.")
+
+        os.chdir(self.repo.root)
+
+        # handle other revisions
+        ## The methodology here is to use or create a directory
+        ## in the user's /tmp directory for the given revision
+        ## and store whatever files are being accessed there,
+        ## then simply set path to the temporary repodir
+        if opts['rev']:
+            # FIXME error on bad rev?
+            rev = str(self.repo[opts['rev']])
+            tempdir = tempfile.gettempdir()
+            self._revpath = os.path.join(tempdir, 'b-'+rev)
+            _mkdir_p(os.path.join(self._revpath, self.bugsdir))
+            relbugsdir = os.path.join(self.bugsdir, 'bugs')
+            revbugsdir = os.path.join(self._revpath, relbugsdir)
+            if not os.path.exists(revbugsdir):
+                _cat(self.ui, self.repo, relbugsdir, self._revpath, rev)
+            os.chdir(self._revpath)
+
+        fast_add = self.ui.configbool("bugs", "fast_add", False)
+        self._bd = BugsDict(self.bugsdir, self.user, fast_add)
+        return self._bd
+
+    def _cat_rev_details(self, id, rev):
+        # Try to write the details file for this revision
+        # if the lookup fails, we don't need to worry about it, the
+        # standard error handling will catch it and warn the user
+        fullid = self._bd.id(id)
+        detfile = os.path.join(self.bugsdir,'details',fullid+'.txt')
+        revdetfile = os.path.join(self._revpath,detfile)
+        if not os.path.exists(revdetfile):
+            _mkdir_p(os.path.join(self._revpath, self.bugsdir, 'details'))
+            os.chdir(self.repo.root) # TODO rearrange so this isn't necessary
+            _cat(self.ui, self.repo, detfile, self._revpath, rev)
+            os.chdir(self._revpath)
+
+    def invoke(self, cmd, *args, **opts):
+        commands = ['add', 'assign', 'comment', 'details', 'edit', 'help', 'id',
+                    'list', 'rename', 'resolve', 'reopen', 'users', 'version']
+
+        candidates = [c for c in commands if c.startswith(cmd)]
+        exact_candidate = [c for c in candidates if c == cmd]
+        if exact_candidate:
+            pass # already valid command
+        elif len(candidates) > 1:
+            raise AmbiguousCommand(candidates)
+        elif len(candidates) == 1:
+            cmd = candidates[0]
+        else:
+            raise UnknownCommand(cmd)
+
+        getattr(self, cmd, None)(args, opts)
+
+        # Add all new files to Mercurial - does not commit
+        if not opts['rev']:
+            _track(self.ui, self.repo, self.bugsdir)
+
+    @valid_opts('edit')
+    def add(self, args, opts):
+        title = ' '.join(args).strip()
+        if not title:
+            raise InvalidCommand("Must specify issue title")
+        self.ui.write(self.bd(opts).add(title) + '\n')
+        self._bd.write()
+
+        self._maybe_edit(self._bd.last_added_id, opts)
+
+    @valid_opts('edit')
+    @prefix_plus_args
+    def rename(self, id, args, opts):
+        title = ' '.join(args).strip()
+        if not title:
+            raise InvalidCommand("Must specify issue title")
+        self.bd(opts).rename(id, title)
+        self._bd.write()
+
+        self._maybe_edit(id, opts)
+
+    @valid_opts('rev')
+    @zero_args
+    def users(self, opts):
+        self.ui.write(self.bd(opts).users() + '\n')
+
+    @valid_opts('force', 'edit')
+    @prefix_plus_args
+    def assign(self, id, args, opts):
+        if not args:
+            raise InvalidCommand("Must provide a username to assign")
+        if len(args) > 1:
+            raise InvalidCommand("Unexpected arguments: %s" % args[1:])
+        self.ui.write(self.bd(opts).assign(id, args[0], opts['force']) + '\n')
+        self._bd.write()
+
+        self._maybe_edit(id, opts)
+
+    @valid_opts('edit', 'rev') # TODO why support edit?
+    @prefix_arg
+    def details(self, id, opts):
+        if opts['rev']:
+            self._cat_rev_details(id, opts['rev'])
+        self.ui.write(self.bd(opts).details(id) + '\n')
+
+        if not opts['rev']:
+            self._maybe_edit(id, opts)
+
+    @valid_opts()
+    @prefix_arg
+    def edit(self, id, opts):
+        self.bd(opts).edit(id, self.ui.geteditor())
+
+    def _maybe_edit(self, id, opts):
+        if opts['edit']:
+            self._bd.edit(id, self.ui.geteditor())
+
+    @valid_opts('edit')
+    @prefix_plus_args
+    def comment(self, id, args, opts):
+        comment = ' '.join(args).strip()
+        if not comment and not opts['edit']:
+            raise InvalidCommand("Must include comment text in command or use --edit")
+        self.bd(opts).comment(id, comment)
+
+        self._maybe_edit(id, opts)
+
+    @valid_opts('edit')
+    @prefix_arg
+    def resolve(self, id, opts):
+        self.bd(opts).resolve(id)
+        self._bd.write()
+
+        self._maybe_edit(id, opts)
+
+    @valid_opts('edit')
+    @prefix_arg
+    def reopen(self, id, opts):
+        self.bd(opts).reopen(id)
+        self._bd.write()
+
+        self._maybe_edit(id, opts)
+
+    @valid_opts('alpha', 'chrono', 'grep', 'owner', 'resolved', 'rev', 'truncate')
+    @zero_args
+    def list(self, opts):
+        self.ui.write(self.bd(opts).list(
+            not opts['resolved'],
+            opts['owner'],
+            opts['grep'],
+            opts['alpha'],
+            opts['chrono'],
+            self.ui.termwidth() if opts['truncate'] else 0)
+        + '\n')
+
+    @valid_opts('edit', 'rev') # TODO why support edit?
+    @prefix_arg
+    def id(self, id, opts):
+        self.ui.write(self.bd(opts).id(id) + '\n')
+
+        if not opts['rev']:
+            self._maybe_edit(id, opts)
+
+    @valid_opts()
+    @zero_args
+    def help(self, opts):
+        commands.help_(self.ui,'b')
+
+    @valid_opts()
+    @zero_args
+    def version(self, opts):
+        version_str = "%d.%d.%d" % _version_num
+        self.ui.write(_("b Version %s - built %s\n") % (version_str, _build_date))
+
+
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -651,171 +920,34 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
     version
         Outputs the version number of b being used in this repository
     """
-    text = (' '.join(args)).strip();
-    id = ''
-    subtext = ''
-    if len(args) > 0:
-        id = args[0]
-    if len(args) > 1:
-        subtext = (' '.join(args[1:])).strip()
-    
     try:
-        bugsdir = bugs_dir(ui)
-        user = ui.config("bugs","user",'')
-        fast_add = ui.configbool("bugs","fast_add",False)
-        if user == 'hg.user':
-            user = ui.username()
-        path = repo.root
-        os.chdir(path)
-
-        # handle other revisions
-        ## The methodology here is to use or create a directory
-        ## in the user's /tmp directory for the given revision
-        ## and store whatever files are being accessed there,
-        ## then simply set path to the temporary repodir
-        if opts['rev']:
-            # TODO error on non-readonly command
-            rev = str(repo[opts['rev']])
-            tempdir = tempfile.gettempdir()
-            revpath = os.path.join(tempdir,'b-'+rev)
-            _mkdir_p(os.path.join(revpath,bugsdir))
-            if not os.path.exists(os.path.join(revpath,bugsdir,'bugs')):
-                _cat(ui,repo,os.path.join(bugsdir,'bugs'),revpath,rev)
-            os.chdir(revpath)
-
-        bd = BugsDict(bugsdir,user,fast_add)
-        
-        if opts['rev'] and 'details'.startswith(cmd):
-            # if it's a details command, try to get the details file
-            # if the lookup fails, we don't need to worry about it, the
-            # standard error handling will catch it and warn the user
-            fullid = bd.id(id)
-            detfile = os.path.join(bugsdir,'details',fullid+'.txt')
-            if not os.path.exists(os.path.join(revpath,detfile)):
-                _mkdir_p(os.path.join(revpath,bugsdir,'details'))
-                os.chdir(path)
-                _cat(ui,repo,detfile,revpath,rev)
-                os.chdir(revpath)
-        
-        def _add():
-            ui.write(bd.add(text) + '\n')
-            bd.write()
-
-        def _rename():
-            bd.rename(id, subtext)
-            bd.write()
-
-        def _users():
-            ui.write(bd.users() + '\n')
-
-        def _assign():
-            ui.write(bd.assign(id, subtext, opts['force']) + '\n')
-            bd.write()
-
-        def _details():
-            ui.write(bd.details(id) + '\n')
-
-        def _edit():
-            bd.edit(id, ui.geteditor())
-
-        def _comment():
-            bd.comment(id, subtext)
-
-        def _resolve():
-            bd.resolve(id)
-            bd.write()
-
-        def _reopen():
-            bd.reopen(id)
-            bd.write()
-
-        def _list():
-            ui.write(bd.list(not opts['resolved'], opts['owner'], opts['grep'],
-                             opts['alpha'], opts['chrono'], ui.termwidth() if opts['truncate'] else 0) + '\n')
-
-        def _id():
-            ui.write(bd.id(id) + '\n')
-            
-        def _help():
-            commands.help_(ui,'b')
-
-        def _version():
-            ui.write(_("b Version %s - built %s\n") % ("%d.%d.%d" % _version_num, _build_date))
-
-        readonly_cmds = set(['users','details','list','id'])
-        cmds = {
-                'add': _add,
-                'rename': _rename,
-                'users': _users,
-                'assign': _assign,
-                'details': _details,
-                'edit': _edit,
-                'comment': _comment,
-                'resolve': _resolve,
-                'reopen': _reopen,
-                'list': _list,
-                'id': _id,
-                'help': _help,
-                'version': _version,
-               }
-
-        candidates = [c for c in cmds if c.startswith(cmd)]
-        real_candidate = [c for c in candidates if c == cmd]
-        if real_candidate:
-            pass # already valid command
-        elif len(candidates) > 1:
-            raise AmbiguousCommand(candidates)
-        elif len(candidates) == 1:
-            cmd = candidates[0]
-        else:
-            raise UnknownCommand(cmd)
-        
-        # ensure only read only commands can handle revision selection
-        if opts['rev'] and cmd not in readonly_cmds:
-            raise NonReadOnlyCommand(cmd)
-        cmds[cmd]()
-        
-        # launch the editor - will fail on commands that don't have an issue prefix
-        if cmd != 'edit' and opts['edit']:
-            if opts['rev']:
-                raise NonReadOnlyCommand('edit')
-            if cmd == 'add':
-                id = bd.last_added_id
-            cmds['edit']()
-            
-        # Add all new files to Mercurial - does not commit
-        if not opts['rev']:
-            _track(ui,repo,bugsdir)
-    
+        try:
+             _CLI(ui, repo).invoke(cmd, *args, **opts)
+        except Exception:
+            if 'HG_B_LOG_TRACEBACKS' in os.environ:
+                traceback.print_exc(file=sys.stderr)
+                sys.stderr.write("\n") # Python3: print("", file=sys.stderr)
+            raise
     except InvalidInput, e:
         ui.warn(_("Invalid input: %s\n") % e.reason)
+    except RequiresPrefix, e:
+        ui.warn(_("You need to provide an issue prefix.  Run list to get a unique prefix for the bug you are looking for.\n"))
     except AmbiguousPrefix, e:
-        if (id == ''):
-            ui.warn(_("You need to provide an issue prefix.  Run list to get a unique prefix for the bug you are looking for.\n"))
-        else:
-            ui.warn(_("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for.\n") % e.prefix)
+        ui.warn(_("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for.\n") % e.prefix)
     except UnknownPrefix, e:
-        if (id == ''):
-            ui.warn(_("You need to provide an issue prefix.  Run list to get a unique prefix for the bug you are looking for.\n"))
-        else:
-            ui.warn(_("The provided prefix - %s - could not be found in the bugs database.\n") % e.prefix)
+        ui.warn(_("The provided prefix - %s - could not be found in the bugs database.\n") % e.prefix)
     except AmbiguousUser, e:
         ui.warn(_("The provided user - %s - matched more than one user: %s\n") % (e.user, e.matched))
     except UnknownUser, e:
         ui.warn(_("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user.\n") % e.user)
+    except InvalidCommand, e:
+        ui.warn(_("Invalid command: %s\n") % e.reason)
     except UnknownCommand, e:
         ui.warn(_("No such command '%s'\n") % e.cmd)
     except AmbiguousCommand, e:
         ui.warn(_("Command ambiguous between: %s\n") % (', '.join(e.cmd)))
     except NonReadOnlyCommand, e:
         ui.warn(_("'%s' is not a read-only command - cannot run against a past revision\n") % e.cmd)
-    except IOError, e:
-        # Manually print traceback since Mercurial suppresses known errnos
-        #import traceback
-        #print(traceback.format_exc())
-        raise e
-
-    #open=True,owner='*',grep='',verbose=False,quiet=False):
 
 #
 # Programmatic access to b

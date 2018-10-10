@@ -262,7 +262,7 @@ setup() {
   hg b add some bug 9
   hg b list -a
 
-  run_hg b id ''
+  run_hg b id
   [[ "$output" =~ provide\ an\ issue ]]
 
   run_hg b id b7
@@ -292,5 +292,5 @@ setup() {
   hg b add some bug
   hg --config ui.username=username commit -m "commit"
   run_hg b --rev tip add some bug
-  [[ "$output" =~ not\ a\ read-only ]]
+  [[ "$output" =~ not\ a\ supported\ flag ]]
 }
