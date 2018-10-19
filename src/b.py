@@ -44,73 +44,73 @@ from mercurial import hg, commands, registrar
 #
 # Version Info
 #
-_version_num = (0,6,4)
-_build_date = date(2018,9,16)
+_version_num = (0,7,0)
+_build_date = date(2018,10,19)
 
 #
 # Exceptions
 #
-class RequiresPrefix(Exception):
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    def __init__(self, msg):
+        super(Error, self).__init__(msg)
+        self.msg = msg
+
+class RequiresPrefix(Error):
     """Raised by CLI when a prefix is required."""
-    def __init__(self, prefix):
-        super(RequiresPrefix, self).__init__()
-        self.prefix = prefix
+    def __init__(self):
+        super(RequiresPrefix, self).__init__(_("You need to provide an issue prefix. Run list to get a unique prefix for the bug you are looking for."))
 
-class AmbiguousPrefix(Exception):
-    """Raised when trying to use a prefix that could identify multiple tasks."""
-    def __init__(self, prefix):
-        super(AmbiguousPrefix, self).__init__()
-        self.prefix = prefix
-
-class UnknownPrefix(Exception):
+class UnknownPrefix(Error):
     """Raised when trying to use a prefix that does not match any tasks."""
     def __init__(self, prefix):
-        super(UnknownPrefix, self).__init__()
+        super(UnknownPrefix, self).__init__(_("The provided prefix - %s - could not be found in the bugs database.") % prefix)
         self.prefix = prefix
 
-class AmbiguousUser(Exception):
+class AmbiguousPrefix(Error):
+    """Raised when trying to use a prefix that could identify multiple tasks."""
+    def __init__(self, prefix):
+        super(AmbiguousPrefix, self).__init__(_("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for.") % prefix)
+        self.prefix = prefix
+
+class AmbiguousUser(Error):
     """Raised when trying to use a user prefix that could identify multiple users."""
     def __init__(self, user, matched):
-        super(AmbiguousUser, self).__init__()
+        super(AmbiguousUser, self).__init__(_("The provided user - %s - matched more than one user: %s") % (user, ', '.join(matched)))
         self.user = user
         self.matched = matched
 
-class UnknownUser(Exception):
+class UnknownUser(Error):
     """Raised when trying to use a user prefix that does not match any users."""
     def __init__(self, user):
-        super(UnknownUser, self).__init__()
+        super(UnknownUser, self).__init__(_("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user.") % user)
         self.user = user
 
-class AmbiguousCommand(Exception):
+class AmbiguousCommand(Error):
     """Raised when trying to run a command by prefix that matches more than one command."""
-    def __init__(self, cmd):
-        super(AmbiguousCommand, self).__init__()
-        self.cmd = cmd
+    def __init__(self, cmds):
+        super(AmbiguousCommand, self).__init__(_("Command ambiguous between: %s") % ', '.join(cmds))
+        self.cmds = cmds
 
-class UnknownCommand(Exception):
+class UnknownCommand(Error):
     """Raised when trying to run an unknown command."""
     def __init__(self, cmd):
-        super(UnknownCommand, self).__init__()
+        super(UnknownCommand, self).__init__(_("No such command '%s'") % cmd)
         self.cmd = cmd
 
-class InvalidCommand(Exception):
+class InvalidCommand(Error):
     """Raised when command invocation is invalid, e.g. incorrect options."""
     def __init__(self, reason):
-        super(InvalidCommand, self).__init__()
+        super(InvalidCommand, self).__init__(_("Invalid command: %s") % reason)
         self.reason = reason
 
-class InvalidInput(Exception):
+class InvalidInput(Error):
     """Raised when the input to a command is somehow invalid - for example,
     a username with a | character will cause problems parsing the bugs file."""
     def __init__(self, reason):
-        super(InvalidInput, self).__init__()
+        super(InvalidInput, self).__init__(_("Invalid input: %s") % reason)
         self.reason = reason
 
-class NonReadOnlyCommand(Exception):
-    """Raised when user tries to run a destructive command against a read only issue db."""
-    def __init__(self, cmd):
-        super(NonReadOnlyCommand, self).__init__()
-        self.cmd = cmd
 #       
 # Helper Methods - often straight from t
 #
@@ -591,7 +591,7 @@ class valid_opts:
                             if non_default(o, opts[o])
                             and o not in self.valid_opts]
             if invalid_opts:
-                raise InvalidCommand("--%s is not a supported flag for this command" % invalid_opts[0])
+                raise InvalidCommand(_("--%s is not a supported flag for this command" % invalid_opts[0]))
             return f(that, args, opts)
         # TODO have @simple_decorator support decorator classes
         d.__name__ = f.__name__
@@ -603,19 +603,17 @@ class valid_opts:
 def zero_args(f):
     def d(self, args, opts):
         if args:
-            raise InvalidCommand("Expected zero arguments, got '%s'" % ' '.join(args))
+            raise InvalidCommand(_("Expected zero arguments, got '%s'" % ' '.join(args)))
         return f(self, opts)
     return d
 
 @simple_decorator
 def prefix_arg(f):
     def d(self, args, opts):
-        # TODO maybe we should just treat zero-args as an empty prefix string,
-        # and let the ambiguous prefix check handle that?
         if len(args) < 1:
-            raise RequiresPrefix("Issue prefix required")
+            raise RequiresPrefix()
         elif len(args) > 1:
-            raise InvalidCommand("Unexpected arguments: %s" % args[1:])
+            raise InvalidCommand(_("Unexpected arguments: %s" % args[1:]))
         else:
             return f(self, args[0], opts)
     return d
@@ -624,7 +622,7 @@ def prefix_arg(f):
 def prefix_plus_args(f):
     def d(self, args, opts):
         if len(args) < 1:
-            raise RequiresPrefix("Issue prefix required")
+            raise RequiresPrefix()
         return f(self, args[0], args[1:], opts)
     return d
 
@@ -653,10 +651,17 @@ class _CLI(object):
         self.repo = repo
         self.bugsdir = bugs_dir(ui)
 
-        # TODO don't require a magic string for the default username
         self.user = self.ui.config("bugs","user",'')
         if self.user == 'hg.user':
-            self.user = self.ui.username()
+            ui.warn(_("No need to set bugs.user=hg.user in your hgrc - just remove this line\n"))
+            self.user = ''
+        if not self.user:
+            # Use Mercurial username if bugs.user is not set
+            # not sure if there's a better way to optionally get the username
+            try:
+                self.user = self.ui.username()
+            except:
+                pass
 
         self._bd = None
         self._revpath = None
@@ -726,7 +731,7 @@ class _CLI(object):
     def add(self, args, opts):
         title = ' '.join(args).strip()
         if not title:
-            raise InvalidCommand("Must specify issue title")
+            raise InvalidCommand(_("Must specify issue title"))
         self.ui.write(self.bd(opts).add(title) + '\n')
         self._bd.write()
 
@@ -737,7 +742,7 @@ class _CLI(object):
     def rename(self, id, args, opts):
         title = ' '.join(args).strip()
         if not title:
-            raise InvalidCommand("Must specify issue title")
+            raise InvalidCommand(_("Must specify issue title"))
         self.bd(opts).rename(id, title)
         self._bd.write()
 
@@ -752,23 +757,20 @@ class _CLI(object):
     @prefix_plus_args
     def assign(self, id, args, opts):
         if not args:
-            raise InvalidCommand("Must provide a username to assign")
+            raise InvalidCommand(_("Must provide a username to assign"))
         if len(args) > 1:
-            raise InvalidCommand("Unexpected arguments: %s" % args[1:])
+            raise InvalidCommand(_("Unexpected arguments: %s" % args[1:]))
         self.ui.write(self.bd(opts).assign(id, args[0], opts['force']) + '\n')
         self._bd.write()
 
         self._maybe_edit(id, opts)
 
-    @valid_opts('edit', 'rev') # TODO why support edit?
+    @valid_opts('rev')
     @prefix_arg
     def details(self, id, opts):
         if opts['rev']:
             self._cat_rev_details(id, opts['rev'])
         self.ui.write(self.bd(opts).details(id) + '\n')
-
-        if not opts['rev']:
-            self._maybe_edit(id, opts)
 
     @valid_opts()
     @prefix_arg
@@ -784,7 +786,7 @@ class _CLI(object):
     def comment(self, id, args, opts):
         comment = ' '.join(args).strip()
         if not comment and not opts['edit']:
-            raise InvalidCommand("Must include comment text in command or use --edit")
+            raise InvalidCommand(_("Must include comment text in command or use --edit"))
         self.bd(opts).comment(id, comment)
 
         self._maybe_edit(id, opts)
@@ -817,13 +819,10 @@ class _CLI(object):
             self.ui.termwidth() if opts['truncate'] else 0)
         + '\n')
 
-    @valid_opts('edit', 'rev') # TODO why support edit?
+    @valid_opts('rev')
     @prefix_arg
     def id(self, id, opts):
         self.ui.write(self.bd(opts).id(id) + '\n')
-
-        if not opts['rev']:
-            self._maybe_edit(id, opts)
 
     @valid_opts()
     @zero_args
@@ -926,28 +925,11 @@ def cmd(ui,repo,cmd = 'list',*args,**opts):
         except Exception:
             if 'HG_B_LOG_TRACEBACKS' in os.environ:
                 traceback.print_exc(file=sys.stderr)
-                sys.stderr.write("\n") # Python3: print("", file=sys.stderr)
+                sys.stderr.write("\n")
             raise
-    except InvalidInput, e:
-        ui.warn(_("Invalid input: %s\n") % e.reason)
-    except RequiresPrefix, e:
-        ui.warn(_("You need to provide an issue prefix.  Run list to get a unique prefix for the bug you are looking for.\n"))
-    except AmbiguousPrefix, e:
-        ui.warn(_("The provided prefix - %s - is ambiguous, and could point to multiple bugs.  Run list to get a unique prefix for the bug you are looking for.\n") % e.prefix)
-    except UnknownPrefix, e:
-        ui.warn(_("The provided prefix - %s - could not be found in the bugs database.\n") % e.prefix)
-    except AmbiguousUser, e:
-        ui.warn(_("The provided user - %s - matched more than one user: %s\n") % (e.user, e.matched))
-    except UnknownUser, e:
-        ui.warn(_("The provided user - %s - did not match any users in the system.  Use -f to force the creation of a new user.\n") % e.user)
-    except InvalidCommand, e:
-        ui.warn(_("Invalid command: %s\n") % e.reason)
-    except UnknownCommand, e:
-        ui.warn(_("No such command '%s'\n") % e.cmd)
-    except AmbiguousCommand, e:
-        ui.warn(_("Command ambiguous between: %s\n") % (', '.join(e.cmd)))
-    except NonReadOnlyCommand, e:
-        ui.warn(_("'%s' is not a read-only command - cannot run against a past revision\n") % e.cmd)
+    except Error, e:
+        ui.warn('%s\n' % e.msg)
+        return 1
 
 #
 # Programmatic access to b

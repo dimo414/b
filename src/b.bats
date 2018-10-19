@@ -2,6 +2,7 @@
 
 export HGRCPATH=  # https://stackoverflow.com/q/52584763/113632
 export HG_B_SIMPLE_HASHING=true
+export HG_B_LOG_TRACEBACKS=true
 
 _hg() {
   command hg \
@@ -48,7 +49,7 @@ setup() {
   hg b list -r
   hg b comment 7 some comment
   hg b details 7
-  EDITOR=cat hg b edit
+  EDITOR=cat hg b edit 7
   hg b users
   hg b version
 }
@@ -130,6 +131,9 @@ setup() {
   run_hg b users
   [[ "${lines[1]}" =~ ^from-hg: ]]
   hg --config ui.username=from-hg b assign 7 me
+  run_hg b users
+  [[ "${lines[1]}" =~ ^from-hg: ]]
+  hg b assign 7 me
   run_hg b users
   [[ "${lines[1]}" =~ ^Nobody: ]]
 }
@@ -225,7 +229,7 @@ setup() {
 }
 
 # Failure Tests
-# TODO simplify these tests once failures return a non-zero exit code properly
+# Ok to remove error-message checks if they become too brittle
 
 @test "bad-db is-dir" {
   mkdir -p .bugs/bugs
@@ -242,17 +246,21 @@ setup() {
 
 @test "bad-command" {
   run_hg b foo
+  (( status != 0 ))
   [[ "$output" =~ No\ such\ command ]]
 
   run_hg b ''
+  (( status != 0 ))
   [[ "$output" =~ ambiguous ]]
   run_hg b re
+  (( status != 0 ))
   [[ "$output" =~ ambiguous ]]
 }
 
 @test "bad-input" {
   hg b add some bug
   run_hg b assign -f 7 'foo|bar'
+  (( status != 0 ))
   [[ "$output" =~ Invalid\ input ]]
 }
 
@@ -263,12 +271,15 @@ setup() {
   hg b list -a
 
   run_hg b id
+  (( status != 0 ))
   [[ "$output" =~ provide\ an\ issue ]]
 
   run_hg b id b7
+  (( status != 0 ))
   [[ "$output" =~ ambiguous ]]
 
   run_hg b id c
+  (( status != 0 ))
   [[ "$output" =~ could\ not\ be\ found ]]
 }
 
@@ -279,12 +290,15 @@ setup() {
   hg b assign 8 -f UserB
 
   run_hg b list -o ''
+  (( status != 0 ))
   [[ "$output" =~ more\ than\ one ]]
 
   run_hg b list -o use
+  (( status != 0 ))
   [[ "$output" =~ more\ than\ one ]]
 
   run_hg b list -o foo
+  (( status != 0 ))
   [[ "$output" =~ did\ not\ match ]]
 }
 
@@ -292,5 +306,6 @@ setup() {
   hg b add some bug
   hg --config ui.username=username commit -m "commit"
   run_hg b --rev tip add some bug
+  (( status != 0 ))
   [[ "$output" =~ not\ a\ supported\ flag ]]
 }
