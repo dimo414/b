@@ -2,6 +2,7 @@
 
 export HGRCPATH=  # https://stackoverflow.com/q/52584763/113632
 export HG_B_SIMPLE_HASHING=true
+export HG_B_LOG_TRACEBACKS=true
 
 _hg() {
   command hg \
@@ -28,7 +29,7 @@ setup() {
   local dir
   dir=$(mktemp -d "$BATS_TMPDIR/b-test-$BATS_TEST_NUMBER-XXXXXX")
   cd "$dir"
-  hg init
+  _hg init
 }
 
 @test "basic flow" {
@@ -48,7 +49,7 @@ setup() {
   hg b list -r
   hg b comment 7 some comment
   hg b details 7
-  EDITOR=cat hg b edit
+  EDITOR=cat hg b edit 7
   hg b users
   hg b version
 }
@@ -130,6 +131,9 @@ setup() {
   run_hg b users
   [[ "${lines[1]}" =~ ^from-hg: ]]
   hg --config ui.username=from-hg b assign 7 me
+  run_hg b users
+  [[ "${lines[1]}" =~ ^from-hg: ]]
+  hg b assign 7 me
   run_hg b users
   [[ "${lines[1]}" =~ ^Nobody: ]]
 }
@@ -222,4 +226,86 @@ setup() {
   hg b id 7 --rev 0
 
   echo DONE; false
+}
+
+# Failure Tests
+# Ok to remove error-message checks if they become too brittle
+
+@test "bad-db is-dir" {
+  mkdir -p .bugs/bugs
+  run_hg b list
+  (( status != 0 ))
+}
+
+@test "bad-db malformed" {
+  mkdir -p .bugs
+  echo "foo | bar" > .bugs/bugs
+  run_hg b list
+  (( status != 0 ))
+}
+
+@test "bad-command" {
+  run_hg b foo
+  (( status != 0 ))
+  [[ "$output" =~ No\ such\ command ]]
+
+  run_hg b ''
+  (( status != 0 ))
+  [[ "$output" =~ ambiguous ]]
+  run_hg b re
+  (( status != 0 ))
+  [[ "$output" =~ ambiguous ]]
+}
+
+@test "bad-input" {
+  hg b add some bug
+  run_hg b assign -f 7 'foo|bar'
+  (( status != 0 ))
+  [[ "$output" =~ Invalid\ input ]]
+}
+
+@test "bad-prefix-args" {
+  # titles hash to a common prefix b7
+  hg b add some bug 8
+  hg b add some bug 9
+  hg b list -a
+
+  run_hg b id
+  (( status != 0 ))
+  [[ "$output" =~ provide\ an\ issue ]]
+
+  run_hg b id b7
+  (( status != 0 ))
+  [[ "$output" =~ ambiguous ]]
+
+  run_hg b id c
+  (( status != 0 ))
+  [[ "$output" =~ could\ not\ be\ found ]]
+}
+
+@test "bad-user-args" {
+  hg b add some bug
+  hg b add another bug
+  hg b assign 7 -f UserA
+  hg b assign 8 -f UserB
+
+  run_hg b list -o ''
+  (( status != 0 ))
+  [[ "$output" =~ more\ than\ one ]]
+
+  run_hg b list -o use
+  (( status != 0 ))
+  [[ "$output" =~ more\ than\ one ]]
+
+  run_hg b list -o foo
+  (( status != 0 ))
+  [[ "$output" =~ did\ not\ match ]]
+}
+
+@test "bad-readonly-cmd" {
+  hg b add some bug
+  hg --config ui.username=username commit -m "commit"
+  run_hg b --rev tip add some bug
+  (( status != 0 ))
+  [[ "$output" =~ not\ a\ supported\ flag ]]
 }
