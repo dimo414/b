@@ -1,6 +1,6 @@
 # `b`, a distributed bug tracker extension for Mercurial
 
-[![0.7.0 Release](https://img.shields.io/badge/release-0.3-green.svg)](https://bitbucket.org/dimo414/b/src/tip/src/b.py)
+[![0.7.0 Release](https://img.shields.io/badge/release-0.7.0-green.svg)](https://bitbucket.org/dimo414/b/src/tip/src/b.py)
 [![GPL License](https://img.shields.io/badge/license-GPL-blue.svg)](https://bitbucket.org/dimo414/f-ansi/src/tip/LICENSE)
 
 ## Introduction:
