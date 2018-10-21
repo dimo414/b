@@ -5,8 +5,11 @@ export HG_B_SIMPLE_HASHING=true
 export HG_B_LOG_TRACEBACKS=true
 
 _hg() {
+  # Need to set ui.interactive to disable auto-username selection
+  # https://www.mercurial-scm.org/repo/hg/file/4.7/mercurial/ui.py#l837
   command hg \
     --config extensions.b="${BATS_TEST_DIRNAME}/b.py" \
+    --config ui.interactive=true \
     "$@"
 }
 
