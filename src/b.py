@@ -497,12 +497,12 @@ class BugsDict(object):
         self.bugs[task_id] = {'id': task_id, 'open': 'True', 'owner': self.user,
                               'text': text, 'time': time.time()}
         self.last_added_id = task_id
-        if not self.fast_add:
-            prefix = _prefixes(self.bugs.keys())[task_id]
-            prefix = "%s:%s" % (prefix, task_id[len(prefix):10])
+        if self.fast_add:
+            short_task_id = "%s..." % task_id[:10]
         else:
-            prefix = "%s..." % task_id[:10]
-        return _("Added bug %s") % prefix
+            prefix = _prefixes(self.bugs.keys())[task_id]
+            short_task_id = "%s:%s" % (prefix, task_id[len(prefix):10])
+        return _("Added bug %s") % short_task_id
 
     def rename(self, prefix, text):
         """Renames the bug
