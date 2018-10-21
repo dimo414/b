@@ -58,7 +58,8 @@ setup() {
 }
 
 @test "add-list-details" {
-  hg b add some bug
+  run_hg b add some bug
+  [[ "$output" == 'Added bug 7:f07e8490f' ]]
   run_hg b list
   [[ "$output" =~ "some bug" ]]
   run_hg b details 7
