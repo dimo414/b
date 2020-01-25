@@ -1,7 +1,7 @@
 # `b`, a distributed bug tracker extension for Mercurial
 
-[![0.7.0 Release](https://img.shields.io/badge/release-0.7.0-green.svg)](https://bitbucket.org/dimo414/b/src/tip/src/b.py)
-[![GPL License](https://img.shields.io/badge/license-GPL-blue.svg)](https://bitbucket.org/dimo414/f-ansi/src/tip/LICENSE)
+[![0.7.0 Release](https://img.shields.io/badge/release-0.7.0-green.svg)](https://github.com/dimo414/b/blob/master/src/b.py)
+[![GPL License](https://img.shields.io/badge/license-GPL-blue.svg)](https://github.com/dimo414/b/blob/master/LICENSE)
 
 ## Introduction:
 
@@ -41,7 +41,7 @@ notification when a bug is reassigned, and the ability to categorize bugs and
 to provide resolution reasons, like fixed or duplicate - of course these could
 all be done manually, but there is no such built in functionality.
 
-If you need the power of a centralized issue tracker like BitBucket or GitHub
+If you need the power of a centralized issue tracker like GitHub or BitBucket
 provides, you're going to find `b` limited. However if you find the extra
 "features" in these tools to be unhelpful bloat, and you don't want to waste
 time organizing, categorizing, and sorting and instead want a quick, easy way to
@@ -251,7 +251,7 @@ possible, and while there are no plans at present to expand `b` to work with
 other DVCS, the structure to do so exists. If you're interested in investigating
 this let me know.
 
-You may also be interested in [Abundant](http://hg.mwdiamond.com/abundant),
+You may also be interested in [Abundant](http://git.mwdiamond.com/abundant),
 a project I worked on in college to create a more full-fledged distributed
 issue tracker, which is VCS-agnostic.
 
@@ -270,9 +270,14 @@ or any derived works under any other license than the GPL2+.
 
 ### I have an idea for a feature, or a bug to report, what should I do?
 
-`b` is hosted on BitBucket, and you can report issues by filing a bug using
-`b` and sending a pull request. If that's too inconvenient you can also use
-BitBucket's issue tracker: https://bitbucket.org/dimo414/b/issues
+`b` is hosted on GitHub\*, and you can report issues by filing a bug
+using `b` and sending a pull request. If that's too inconvenient you can
+also use GitHub's issue tracker: https://github.com/dimo414/b/issues
+
+<sup>\* It used to be a Mercurial repo on BitBucket, but
+[BitBucket abandoned Mercurial](https://bitbucket.org/blog/sunsetting-mercurial-support-in-bitbucket),
+so for the time being here we are. Consider
+[Hg-Git](https://hg-git.github.io/) to clone the repo down.</sup>
 
 ## Copyright
 
