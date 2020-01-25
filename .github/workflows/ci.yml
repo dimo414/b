@@ -1,0 +1,16 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    container: dimo414/ci-bash
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Python Test
+      run: python src/b-test.py
+    - name: CLI Test
+      run:  bats src
