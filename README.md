@@ -1,3 +1,13 @@
+# `b` is hosted on [Heptapod](https://foss.heptapod.net/mercurial/b)
+
+**This repository was mirrored from Mercurial when BitBucket turned down support for Mercurial repositories, but the [`b` extension](https://www.mercurial-scm.org/wiki/bExtension) is now maintained on [Heptapod](https://foss.heptapod.net/mercurial/b). This repository will not be updated further.**
+
+---
+
+---
+
+---
+
 # `b`, a distributed bug tracker extension for Mercurial
 
 [![0.7.0 Release](https://img.shields.io/badge/release-0.7.0-green.svg)](https://github.com/dimo414/b/blob/master/src/b.py)
